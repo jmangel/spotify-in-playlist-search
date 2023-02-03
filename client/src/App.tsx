@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ajax } from "jquery";
 import './App.css';
 import { Alert, Button, Input, Label, Progress, Spinner } from 'reactstrap';
-import MatchingPlaylist from './MatchingPlaylist';
+import Playlist from './Playlist';
+// import MatchingPlaylist from './MatchingPlaylist';
 
 /* TODO: store previous versions and don't reload same version
 Use the snapshot_id
@@ -32,19 +33,24 @@ const rateLimitWindowSeconds = 30;
 
 const spotifyGreen = '#1DB954';
 
+interface PlaylistMetadata {
+  name: string,
+  external_urls: { spotify: string },
+  tracks: { href: string },
+}
+
 function App() {
   const [accessToken, setAccessToken] = useState('');
   const previousAccessToken = usePrevious(accessToken);
 
   const [profileInfo, setProfileInfo] = useState<{ display_name?: string, external_urls?: { spotify: string }}>({});
 
-  const [playlists, setPlaylists] = useState<{ name: string, external_urls: { spotify: string }, tracks: { href: string }; }[]>([]);
+  const [playlists, setPlaylists] = useState<PlaylistMetadata[]>([]);
   const [playlistsTracks, setPlaylistsTracks] = useState<{ playlist: { name: string, external_urls: { spotify: string } }, tracks: { name: string, artists: { name: string }[], album: { name: string } }[] }[]>([]);
 
   const [playlistIndex, setPlaylistIndex] = useState(0);
 
   const [loading, setLoading] = useState(true);
-  const [loadingPlaylists, setLoadingPlaylists] = useState(true);
   const [initialCallHitRateLimit, setInitialCallHitRateLimit] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -102,50 +108,6 @@ function App() {
     }
   }, [accessToken])  // eslint-disable-line react-hooks/exhaustive-deps
 
-  const memoizedGetPlaylistTracks = useCallback((index: number) => {
-    if (index >= playlists.length) {
-      setLoading(false);
-      setPlaylistIndex(index);
-      return;
-    }
-
-    const url = `${playlists[index].tracks.href}?fields=items(track(name,artists(name),album(name)))`;
-    setPlaylistIndex(index);
-    ajax({
-      url,
-      headers: {
-        'Authorization': 'Bearer ' + accessToken
-      },
-      success: function(response) {
-        if (response.items && response.items[0]) {
-          setPlaylistsTracks(playlistsTracks => [...playlistsTracks, {
-            playlist: playlists[index],
-            tracks: response.items.map(({ track }: { track: { name: string, artists: {}[] } }) => track).filter((track: {}) => !!track),
-          }]);
-        }
-        // TODO: recurse:
-        // if (response.next) recursivelyGetPlaylists(response.next);
-        // else {
-        //   playlistsTracksUrls = playlists.map(({ tracks }) => tracks.href);
-        //   console.log(playlistsTracksUrls);
-        // }
-        memoizedGetPlaylistTracks(index + 1);
-      },
-      error: function(response) {
-        // TODO: handle other errors
-        if (response.status === 429) {
-          setTimeout(() => memoizedGetPlaylistTracks(index), rateLimitWindowSeconds*1000)
-        } else {
-          memoizedGetPlaylistTracks(index + 1);
-        }
-      }
-    });
-  }, [accessToken, playlists])
-
-  useEffect(() => {
-    if (!loadingPlaylists && playlists.length > 0) memoizedGetPlaylistTracks(0);
-  }, [loadingPlaylists, playlists, memoizedGetPlaylistTracks])
-
   function recursivelyGetPlaylists(url = 'https://api.spotify.com/v1/me/playlists') {
     ajax({
       url,
@@ -154,11 +116,12 @@ function App() {
       },
       success: function(response) {
         if (response.items) {
-          setPlaylists(playlists => [...playlists, ...response.items]);
+          if (response.offset === 0) setPlaylists(Array.from(Array(response.total)));
+          setPlaylists((playlists) => {
+            response.items.forEach((item: PlaylistMetadata, index: number) => playlists[index + response.offset] = item)
+            return playlists;
+          })
           if (response.next) recursivelyGetPlaylists(response.next);
-          else {
-            setLoadingPlaylists(false);
-          }
         } else console.error('response to recursivelyGetPlaylists had no items')
       },
       error: function(response) {
@@ -174,7 +137,6 @@ function App() {
 
   const reloadPlaylists = () => {
     setLoading(true);
-    setLoadingPlaylists(true);
     setPlaylists([]);
     setPlaylistsTracks([]);
     recursivelyGetPlaylists();
@@ -197,28 +159,6 @@ function App() {
             <div>
               <Button id="reload-playlists-button" onClick={() => reloadPlaylists()}>Reload Playlists</Button>
             </div>
-            {
-              loadingPlaylists && (
-                <div>
-                  {
-                    initialCallHitRateLimit && (
-                      <Alert color="danger">
-                        Rate limit reached with spotify. Try refreshing in 30 seconds, otherwise the service might be down for up to a day
-                      </Alert>
-                    )
-                  }
-                  <small>
-                    (Still loading more playlists)
-                  </small>
-                  <Spinner
-                    size="sm"
-                    className="ml-2"
-                    style={{ color: spotifyGreen }}
-                  >
-                  </Spinner>
-                </div>
-              )
-            }
             <div className="text-center">
               {loading ? 'Searching' : 'Searched'} {playlistIndex} / {playlists.length} playlists
             </div>
@@ -230,8 +170,8 @@ function App() {
             />
             <h3>Matching Playlists</h3>
             <div id="matching-playlists-links">
-              {matchingPlaylists.map(({ playlist, tracks }) => (
-                <MatchingPlaylist playlist={playlist} tracks={tracks} />
+              {playlists.map(({ tracks }) => (
+                <Playlist accessToken={accessToken} href={tracks.href} searchTerm={searchTerm} rateLimitWindowSeconds={rateLimitWindowSeconds} />
               ))}
             </div>
           </div>
