@@ -22,6 +22,10 @@ export interface IPlaylist {
   }
 }
 
+function trackMatches(track: IPlaylist['data']['tracks'][number], searchTerm: string) {
+  return `${track.name} ${track.artists.map(({name}) => name).join(' ')} ${track.album.name}`.toLowerCase().includes((searchTerm || '').toLowerCase());
+}
+
 function Playlist(
   {
     playlist,
@@ -37,7 +41,7 @@ function Playlist(
   const [hasMatch, setHasMatch] = useState(false);
 
   useEffect(() => {
-    setHasMatch((playlist?.data?.tracks || []).some(({name, artists, album}) => (`${name} ${artists.map(({name}) => name).join(' ')} ${album.name}`.toLowerCase().includes((searchTerm || '').toLowerCase()))))
+    setHasMatch((playlist?.data?.tracks || []).some((track) => trackMatches(track, searchTerm)))
   }, [playlist?.data?.tracks, searchTerm]);
 
   return hasMatch ? (
@@ -65,25 +69,30 @@ function Playlist(
               </tr>
             </thead>
             <tbody>
-              {(playlist?.data?.tracks || []).map(({ name, uri, album, artists }, index) => (
-                <tr>
-                  <td><Button onClick={() => playPlaylistTrack(uri, index)} color="primary">
-                    Play
-                  </Button></td>
-                  <td>
-                    {index + 1}
-                  </td>
-                  <td>
-                    {name}
-                  </td>
-                  <td>
-                    {artists.map(({name}) => name).join(', ')}
-                  </td>
-                  <td>
-                    {album.name}
-                  </td>
-                </tr>
-              ))}
+              {(playlist?.data?.tracks || []).map((track, index) => {
+                const { name, uri, album, artists } = track;
+                return trackMatches(track, searchTerm) ? (
+                  <tr>
+                    <td><Button onClick={() => playPlaylistTrack(uri, index)} color="primary">
+                      Play
+                    </Button></td>
+                    <td>
+                      {index + 1}
+                    </td>
+                    <td>
+                      {name}
+                    </td>
+                    <td>
+                      {artists.map(({name}) => name).join(', ')}
+                    </td>
+                    <td>
+                      {album.name}
+                    </td>
+                  </tr>
+                ) : (
+                  <></>
+                );
+              })}
             </tbody>
           </Table>
         </div>

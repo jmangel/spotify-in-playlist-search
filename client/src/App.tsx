@@ -107,7 +107,7 @@ function App() {
       return;
     }
 
-    const url = `${playlists[index].metadata.tracks.href}?fields=items(track(name,artists(name),album(name)))`;
+    const url = `${playlists[index].metadata.tracks.href}?fields=items(track(name,uri,artists(name),album(name)))`;
     setPlaylistIndex(index);
     ajax({
       url,
@@ -117,10 +117,11 @@ function App() {
       success: function(response) {
         if (response.items && response.items[0]) {
           setPlaylists(playlists => {
-            playlists[index].data = {
+            const newPlaylists = [...playlists];
+            newPlaylists[index].data = {
               tracks: response.items.map(({ track }: { track: { name: string, uri: string, artists: {}[] } }) => track).filter((track: {}) => !!track),
             };
-            return playlists;
+            return newPlaylists;
           });
         }
         // TODO: recurse:
