@@ -142,9 +142,11 @@ function App() {
   }, [accessToken])
 
   useEffect(() => {
-    console.warn('checking whether to load next metadata batch', !!nextMetadataLink, playlists.every((playlist) => !!playlist?.data?.tracks))
+    const firstPlaylistWithoutTracks = playlists.find((playlist) => !playlist?.data?.tracks)
+    // console.warn('checking whether to load next metadata batch', !!nextMetadataLink, playlists.find((playlist) => !(!playlist?.metadata || !!playlist?.data?.tracks)))
+    console.warn('checking whether to load next metadata batch', !!nextMetadataLink, !!firstPlaylistWithoutTracks, !firstPlaylistWithoutTracks?.metadata, firstPlaylistWithoutTracks)
     // load next batch of playlists metadata ONLY if all playlists loaded so far
-    if (!!nextMetadataLink && playlists.every((playlist) => !playlist?.metadata || !!playlist?.data?.tracks)) {
+    if (!!nextMetadataLink && !!firstPlaylistWithoutTracks && !firstPlaylistWithoutTracks.metadata) {
       loadNextBatchOfPlaylistMetadatas(nextMetadataLink)
     }
   }, [playlists, nextMetadataLink, loadNextBatchOfPlaylistMetadatas])
