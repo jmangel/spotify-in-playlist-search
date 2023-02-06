@@ -46,6 +46,8 @@ function App() {
 
   const [searchTerm, setSearchTerm] = useState('');
 
+  const [nextMetadataLink, setNextMetadataLink] = useState<string | null>(null);
+
   useEffect(() => {
     if (previousAccessToken) return;
 
@@ -65,7 +67,7 @@ function App() {
         success: function(response) {
           setInitialCallHitRateLimit(false);
           setProfileInfo(response);
-          recursivelyGetPlaylists();
+          setNextMetadataLink('https://api.spotify.com/v1/me/playlists')
         },
         error: function(response) {
           if (response.status === 401) setAccessToken('');
@@ -113,7 +115,7 @@ function App() {
     });
   }
 
-  function recursivelyGetPlaylists(url = 'https://api.spotify.com/v1/me/playlists') {
+  const loadNextBatchOfPlaylistMetadatas = useCallback((url: string) => {
     ajax({
       url,
       headers: {
@@ -121,30 +123,64 @@ function App() {
       },
       success: function(response) {
         if (response.items) {
-          console.warn('loading playlists metadata', playlists.length)
-          if (response.offset === 0) setPlaylists(Array.from(Array(response.total)));
           setPlaylists((playlists) => {
+            if (response.offset === 0) playlists = Array.from(Array(response.total));
             response.items.forEach((item: IPlaylist['metadata'], index: number) => playlists[index + response.offset] = { metadata: item })
             return playlists;
           })
-          if (response.next) recursivelyGetPlaylists(response.next);
+          setNextMetadataLink(response.next)
         } else console.error('response to recursivelyGetPlaylists had no items')
       },
       error: function(response) {
         // TODO: handle other errors
         if (response.status === 429) {
-          setTimeout(() => recursivelyGetPlaylists(url), rateLimitWindowSeconds*1000)
+          setTimeout(() => loadNextBatchOfPlaylistMetadatas(url), rateLimitWindowSeconds*1000)
         } else {
           console.error('unknown error in recursivelyGetPlaylists', response)
         }
       }
     });
-  }
+  }, [accessToken])
+
+  useEffect(() => {
+    // load next batch of playlists metadata ONLY if all playlists loaded so far
+    if (!!nextMetadataLink && playlists.every((playlist) => !playlist?.metadata || !!playlist?.data?.tracks)) {
+      loadNextBatchOfPlaylistMetadatas(nextMetadataLink)
+    }
+  }, [playlists, nextMetadataLink, loadNextBatchOfPlaylistMetadatas])
+
+  // function recursivelyGetPlaylists(url = 'https://api.spotify.com/v1/me/playlists') {
+  //   ajax({
+  //     url,
+  //     headers: {
+  //       'Authorization': 'Bearer ' + accessToken
+  //     },
+  //     success: function(response) {
+  //       if (response.items) {
+  //         console.warn('loading playlists metadata', playlists.length)
+  //         if (response.offset === 0) setPlaylists(Array.from(Array(response.total)));
+  //         setPlaylists((playlists) => {
+  //           response.items.forEach((item: IPlaylist['metadata'], index: number) => playlists[index + response.offset] = { metadata: item })
+  //           return playlists;
+  //         })
+  //         if (response.next) recursivelyGetPlaylists(response.next);
+  //       } else console.error('response to recursivelyGetPlaylists had no items')
+  //     },
+  //     error: function(response) {
+  //       // TODO: handle other errors
+  //       if (response.status === 429) {
+  //         setTimeout(() => recursivelyGetPlaylists(url), rateLimitWindowSeconds*1000)
+  //       } else {
+  //         console.error('unknown error in recursivelyGetPlaylists', response)
+  //       }
+  //     }
+  //   });
+  // }
 
   const reloadPlaylists = () => {
     setLoading(true);
     setPlaylists([]);
-    recursivelyGetPlaylists();
+    // recursivelyGetPlaylists();
   }
 
   return (
