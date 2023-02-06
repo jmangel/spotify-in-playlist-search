@@ -40,8 +40,6 @@ function App() {
 
   const [playlists, setPlaylists] = useState<IPlaylist[]>([]);
 
-  const [playlistIndex, setPlaylistIndex] = useState(0);
-
   const [loading, setLoading] = useState(true);
   const [loadingPlaylists, setLoadingPlaylists] = useState(true);
   const [initialCallHitRateLimit, setInitialCallHitRateLimit] = useState(false);
@@ -78,16 +76,9 @@ function App() {
     }
   }, [accessToken])  // eslint-disable-line react-hooks/exhaustive-deps
 
-  const memoizedGetPlaylistTracks = useCallback((index: number) => {
-    if (index >= playlists.length) {
-      setLoading(false);
-      setPlaylistIndex(index);
-      return;
-    }
-
+  function loadTracks(index: number) {
     const url = `${playlists[index].metadata.tracks.href}?fields=items(track(name,artists(name),album(name)))`;
-    setPlaylistIndex(index);
-    ajax({
+    return ajax({
       url,
       headers: {
         'Authorization': 'Bearer ' + accessToken
@@ -107,22 +98,15 @@ function App() {
         //   playlistsTracksUrls = playlists.map(({ tracks }) => tracks.href);
         //   console.log(playlistsTracksUrls);
         // }
-        memoizedGetPlaylistTracks(index + 1);
       },
       error: function(response) {
         // TODO: handle other errors
         if (response.status === 429) {
-          setTimeout(() => memoizedGetPlaylistTracks(index), rateLimitWindowSeconds*1000)
-        } else {
-          memoizedGetPlaylistTracks(index + 1);
+          setTimeout(() => loadTracks(index), rateLimitWindowSeconds*1000)
         }
       }
     });
-  }, [accessToken, playlists])
-
-  useEffect(() => {
-    if (!loadingPlaylists && playlists.length > 0) memoizedGetPlaylistTracks(0);
-  }, [loadingPlaylists, playlists, memoizedGetPlaylistTracks])
+  }
 
   function recursivelyGetPlaylists(url = 'https://api.spotify.com/v1/me/playlists') {
     ajax({
@@ -197,18 +181,22 @@ function App() {
               )
             }
             <div className="text-center">
-              {loading ? 'Searching' : 'Searched'} {playlistIndex} / {playlists.length} playlists
+              {loading ? 'Searching' : 'Searched'} {playlists.filter(({ data }) => !!data?.tracks).length} / {playlists.length} playlists
             </div>
             <Progress
               animated={loading}
-              value={playlistIndex}
+              value={playlists.filter(({ data }) => !!data?.tracks).length}
               max={playlists.length}
               barStyle={{ backgroundColor: spotifyGreen }}
             />
             <h3>Matching Playlists</h3>
             <div id="matching-playlists-links">
-              {playlists.map((playlist) => (
-                <Playlist playlist={playlist} searchTerm={searchTerm} />
+              {playlists.map((playlist, index) => (
+                <Playlist
+                  playlist={playlist}
+                  searchTerm={searchTerm}
+                  loadTracks={() => loadTracks(index)}
+                />
               ))}
               {/* {matchingPlaylists.map(({ playlist, tracks }) => (
                 <Playlist playlist={playlist} tracks={tracks} searchTerm={searchTerm} />

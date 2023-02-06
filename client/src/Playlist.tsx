@@ -30,9 +30,11 @@ function Playlist(
   {
     playlist,
     searchTerm,
+    loadTracks,
   } : {
     playlist?: IPlaylist,
     searchTerm: string,
+    loadTracks: () => void,
   }
 ) {
   const [expanded, setExpanded] = useState(false);
@@ -41,6 +43,10 @@ function Playlist(
   useEffect(() => {
     setFirstMatch((playlist?.data?.tracks || []).find((track) => trackMatches(track, searchTerm)))
   }, [playlist?.data?.tracks, searchTerm]);
+
+  useEffect(() => {
+    if (!playlist?.data?.tracks) loadTracks();
+  }, [playlist?.data?.tracks, loadTracks])
 
   return firstMatch ? (
     <div>
