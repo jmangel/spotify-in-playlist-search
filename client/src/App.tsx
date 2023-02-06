@@ -95,7 +95,6 @@ function App() {
             playlist.data = {
               tracks: response.items.map(({ track }: { track: { name: string, artists: {}[] } }) => track).filter((track: {}) => !!track),
             };
-            console.warn('loaded tracks for playlist', index)
             return playlists;
           });
         }
@@ -143,6 +142,7 @@ function App() {
   }, [accessToken])
 
   useEffect(() => {
+    console.warn('checking whether to load next metadata batch', !!nextMetadataLink, playlists.every((playlist) => !!playlist?.data?.tracks))
     // load next batch of playlists metadata ONLY if all playlists loaded so far
     if (!!nextMetadataLink && playlists.every((playlist) => !playlist?.metadata || !!playlist?.data?.tracks)) {
       loadNextBatchOfPlaylistMetadatas(nextMetadataLink)
