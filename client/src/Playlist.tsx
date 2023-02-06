@@ -10,19 +10,18 @@ interface ITrack {
     name: string
   }
 }
-
 export interface IPlaylist {
   metadata: {
     name: string,
     external_urls: { spotify: string },
     tracks: { href: string },
   },
-  data: {
+  data?: {
     tracks: ITrack[]
   }
 }
 
-function trackMatches(track: IPlaylist['data']['tracks'][number], searchTerm: string) {
+function trackMatches(track: ITrack, searchTerm: string) {
   return `${track.name} ${track.artists.map(({name}) => name).join(' ')} ${track.album.name}`.toLowerCase().includes((searchTerm || '').toLowerCase());
 }
 
@@ -45,8 +44,8 @@ function Playlist(
   }, [playlist?.data?.tracks, searchTerm]);
 
   useEffect(() => {
-    if (!playlist?.data?.tracks) loadTracks();
-  }, [playlist?.data?.tracks, loadTracks])
+    if (!!playlist?.metadata?.tracks?.href && !playlist.data?.tracks) loadTracks();
+  }, [playlist?.metadata?.tracks?.href, playlist?.data?.tracks, loadTracks])
 
   return firstMatch ? (
     <div>

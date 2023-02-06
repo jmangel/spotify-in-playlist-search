@@ -38,7 +38,7 @@ function App() {
 
   const [profileInfo, setProfileInfo] = useState<{ display_name?: string, external_urls?: { spotify: string }}>({});
 
-  const [playlists, setPlaylists] = useState<IPlaylist[]>([]);
+  const [playlists, setPlaylists] = useState<Array<IPlaylist | undefined>>([]);
 
   const [loading, setLoading] = useState(true);
   const [loadingPlaylists, setLoadingPlaylists] = useState(true);
@@ -78,7 +78,10 @@ function App() {
 
   function loadTracks(index: number) {
     console.warn('loading tracks for playlist', index)
-    const url = `${playlists[index].metadata.tracks.href}?fields=items(track(name,artists(name),album(name)))`;
+    const playlist = playlists[index]
+    if (!playlist?.metadata?.tracks?.href) return;
+
+    const url = `${playlist.metadata.tracks.href}?fields=items(track(name,artists(name),album(name)))`;
     return ajax({
       url,
       headers: {
@@ -87,7 +90,7 @@ function App() {
       success: function(response) {
         if (response.items && response.items[0]) {
           setPlaylists(playlists => {
-            playlists[index].data = {
+            playlist.data = {
               tracks: response.items.map(({ track }: { track: { name: string, artists: {}[] } }) => track).filter((track: {}) => !!track),
             };
             console.warn('loaded tracks for playlist', index)
@@ -119,11 +122,12 @@ function App() {
       success: function(response) {
         if (response.items) {
           console.warn('loading playlists metadata', playlists.length)
-          setPlaylists(playlists => [...playlists, ...response.items.map((item: IPlaylist['metadata']) => { return { metadata: item }; })]);
+          if (response.offset === 0) setPlaylists(Array.from(Array(response.total)));
+          setPlaylists((playlists) => {
+            response.items.forEach((item: IPlaylist['metadata'], index: number) => playlists[index + response.offset] = { metadata: item })
+            return playlists;
+          })
           if (response.next) recursivelyGetPlaylists(response.next);
-          else {
-            setLoadingPlaylists(false);
-          }
         } else console.error('response to recursivelyGetPlaylists had no items')
       },
       error: function(response) {
@@ -139,7 +143,6 @@ function App() {
 
   const reloadPlaylists = () => {
     setLoading(true);
-    setLoadingPlaylists(true);
     setPlaylists([]);
     recursivelyGetPlaylists();
   }
@@ -162,33 +165,18 @@ function App() {
               <Button id="reload-playlists-button" onClick={() => reloadPlaylists()}>Reload Playlists</Button>
             </div>
             {
-              loadingPlaylists && (
-                <div>
-                  {
-                    initialCallHitRateLimit && (
-                      <Alert color="danger">
-                        Rate limit reached with spotify. Try refreshing in 30 seconds, otherwise the service might be down for up to a day
-                      </Alert>
-                    )
-                  }
-                  <small>
-                    (Still loading more playlists)
-                  </small>
-                  <Spinner
-                    size="sm"
-                    className="ml-2"
-                    style={{ color: spotifyGreen }}
-                  >
-                  </Spinner>
-                </div>
+              initialCallHitRateLimit && (
+                <Alert color="danger">
+                  Rate limit reached with spotify. Try refreshing in 30 seconds, otherwise the service might be down for up to a day
+                </Alert>
               )
             }
             <div className="text-center">
-              {loading ? 'Searching' : 'Searched'} {playlists.filter(({ data }) => !!data?.tracks).length} / {playlists.length} playlists
+              {loading ? 'Searching' : 'Searched'} {playlists.filter((playlist) => !!playlist?.data?.tracks).length} / {playlists.length} playlists
             </div>
             <Progress
               animated={loading}
-              value={playlists.filter(({ data }) => !!data?.tracks).length}
+              value={playlists.filter((playlist) => !!playlist?.data?.tracks).length}
               max={playlists.length}
               barStyle={{ backgroundColor: spotifyGreen }}
             />
