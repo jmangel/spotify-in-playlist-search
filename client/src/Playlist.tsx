@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button, Table } from 'reactstrap';
 
-function MatchingPlaylist(
+function Playlist(
   {
     playlist,
     tracks,
@@ -66,4 +66,4 @@ function MatchingPlaylist(
   )
 }
 
-export default MatchingPlaylist;
+export default Playlist;
