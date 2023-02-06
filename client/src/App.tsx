@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ajax } from "jquery";
 import './App.css';
 import { Alert, Button, Input, Label, Progress, Spinner } from 'reactstrap';
-import MatchingPlaylist from './MatchingPlaylist';
+import Playlist from './Playlist';
 
 /* TODO: store previous versions and don't reload same version
 Use the snapshot_id
@@ -317,7 +317,7 @@ function App() {
             <h3>Matching Playlists</h3>
             <div id="matching-playlists-links">
               {matchingPlaylists.map(({ playlist, tracks }) => (
-                <MatchingPlaylist playlist={playlist} tracks={tracks} playPlaylistTrack={(songUri: string, offsetPosition: number) => playPlaylistTrack(playlist?.uri, songUri, offsetPosition)} />
+                <Playlist playlist={playlist} tracks={tracks} playPlaylistTrack={(songUri: string, offsetPosition: number) => playPlaylistTrack(playlist?.uri, songUri, offsetPosition)} />
               ))}
             </div>
           </div>
