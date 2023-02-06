@@ -92,11 +92,11 @@ function App() {
       success: function(response) {
         if (response.items && response.items[0]) {
           setPlaylists(playlists => {
-            playlist.data = {
+            const newPlaylists = [...playlists]
+            newPlaylists[index]!.data = {
               tracks: response.items.map(({ track }: { track: { name: string, artists: {}[] } }) => track).filter((track: {}) => !!track),
             };
-            playlists[index] = playlist;
-            return playlists;
+            return newPlaylists;
           });
         }
         // TODO: recurse:
