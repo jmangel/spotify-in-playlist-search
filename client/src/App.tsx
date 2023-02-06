@@ -146,7 +146,7 @@ function App() {
 
     // console.warn('checking whether to load next metadata batch', !!nextMetadataLink, playlists.find((playlist) => !(!playlist?.metadata || !!playlist?.data?.tracks)))
     // console.warn('checking whether to load next metadata batch', !!nextMetadataLink, !!firstPlaylistWithoutTracks, !firstPlaylistWithoutTracks?.metadata, firstPlaylistWithoutTracks)
-    console.warn('checking whether to load next metadata batch', !!nextMetadataLink, !playlistsWithMetadata.some((playlist) => !playlist.data))
+    console.warn('checking whether to load next metadata batch', !!nextMetadataLink, !playlistsWithMetadata.some((playlist) => !playlist.data), playlistsWithMetadata.find((playlist) => !playlist.data))
     // load next batch of playlists metadata ONLY if all playlists loaded so far
     if (!!nextMetadataLink && !playlistsWithMetadata.some((playlist) => !playlist.data)) {
       loadNextBatchOfPlaylistMetadatas(nextMetadataLink)
