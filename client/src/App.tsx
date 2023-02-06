@@ -48,29 +48,31 @@ function App() {
   const [initialCallHitRateLimit, setInitialCallHitRateLimit] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [matchingPlaylists, setMatchingPlaylists] = useState<{ playlist?: { name: string, url: string }; tracks?: { name: string, artists: string[], album: string, trackIndexInPlaylist: number }[]; }[]>([]);
+  // const [matchingPlaylists, setMatchingPlaylists] = useState<{ playlist?: { name: string, url: string }; tracks?: { name: string, artists: string[], album: string, trackIndexInPlaylist: number }[]; }[]>([]);
 
-  useEffect(() => {
-    if (searchTerm === '') return;
+  // useEffect(() => {
+  //   if (searchTerm === '') return;
 
-    setMatchingPlaylists(playlistsTracks.map(({playlist, tracks}) => {
-      if (!playlist) return {};
-      return {
-        playlist: {
-          name: playlist.name,
-          url: playlist.external_urls.spotify
-        },
-        tracks: tracks.map(({name, artists, album}: { name: string, artists: { name: string }[], album: { name: string } }, index) => {
-          return {
-            name,
-            artists: artists.map(({name}) => name),
-            album: album.name,
-            trackIndexInPlaylist: index,
-          };
-        }).filter(({name, artists, album}) => (`${name} ${artists.join(' ')} ${album}`.toLowerCase().includes(searchTerm.toLowerCase())))
-      };
-    }).filter(({playlist, tracks}) => !!playlist && tracks.length > 0));
-  }, [searchTerm, playlistsTracks])
+  //   setMatchingPlaylists(
+  //     playlistsTracks.map(({playlist, tracks}) => {
+  //       if (!playlist) return {};
+  //       return {
+  //         playlist: {
+  //           name: playlist.name,
+  //           url: playlist.external_urls.spotify
+  //         },
+  //         tracks: tracks.map(({name, artists, album}: { name: string, artists: { name: string }[], album: { name: string } }, index) => {
+  //           return {
+  //             name,
+  //             artists: artists.map(({name}) => name),
+  //             album: album.name,
+  //             trackIndexInPlaylist: index,
+  //           };
+  //         })//.filter(({name, artists, album}) => (`${name} ${artists.join(' ')} ${album}`.toLowerCase().includes(searchTerm.toLowerCase())))
+  //       };
+  //     })//.filter(({playlist, tracks}) => !!playlist && tracks.length > 0)
+  //   );
+  // }, [searchTerm, playlistsTracks])
 
   useEffect(() => {
     if (previousAccessToken) return;
@@ -230,9 +232,12 @@ function App() {
             />
             <h3>Matching Playlists</h3>
             <div id="matching-playlists-links">
-              {matchingPlaylists.map(({ playlist, tracks }) => (
-                <Playlist playlist={playlist} tracks={tracks} />
+              {playlistsTracks.map((data, index) => (
+                <Playlist playlist={{ metadata: playlists[index], data }} searchTerm={searchTerm} />
               ))}
+              {/* {matchingPlaylists.map(({ playlist, tracks }) => (
+                <Playlist playlist={playlist} tracks={tracks} searchTerm={searchTerm} />
+              ))} */}
             </div>
           </div>
         ) : (
