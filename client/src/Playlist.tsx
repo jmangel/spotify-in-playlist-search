@@ -1,6 +1,17 @@
 import { useEffect, useState } from "react";
 import { Button, Table } from 'reactstrap';
 
+interface ITrack {
+  name: string,
+  uri: string,
+  artists: {
+    name: string
+  }[],
+  album: {
+    name: string
+  }
+}
+
 export interface IPlaylist {
   metadata: {
     name: string,
@@ -9,16 +20,7 @@ export interface IPlaylist {
     tracks: { href: string },
   },
   data: {
-    tracks: {
-      name: string,
-      uri: string,
-      artists: {
-        name: string
-      }[],
-      album: {
-        name: string
-      },
-    }[]
+    tracks: ITrack[]
   }
 }
 
@@ -38,13 +40,13 @@ function Playlist(
   }
 ) {
   const [expanded, setExpanded] = useState(false);
-  const [hasMatch, setHasMatch] = useState(false);
+  const [firstMatch, setFirstMatch] = useState<ITrack | undefined>(undefined);
 
   useEffect(() => {
-    setHasMatch((playlist?.data?.tracks || []).some((track) => trackMatches(track, searchTerm)))
+    setFirstMatch((playlist?.data?.tracks || []).find((track) => trackMatches(track, searchTerm)))
   }, [playlist?.data?.tracks, searchTerm]);
 
-  return hasMatch ? (
+  return firstMatch ? (
     <div>
       <a target="_blank" href={playlist?.metadata?.external_urls?.spotify} rel="noreferrer">{playlist?.metadata?.name}:</a>
       <Button onClick={() => setExpanded(expanded => !expanded)} color='link' className="py-0 border-0 align-baseline">See {expanded ? 'less' : 'more'} song results</Button>
@@ -98,8 +100,8 @@ function Playlist(
         </div>
       ) : (
         <span>
-          {playlist?.data?.tracks && playlist.data.tracks[0] && (
-            <span>{playlist.data.tracks[0].name} - {playlist.data.tracks[0].artists.map(({name}) => name).join(', ')} - {playlist.data.tracks[0].album.name}</span>
+          {firstMatch && (
+            <span>{firstMatch.name} - {firstMatch.artists.map(({name}) => name).join(', ')} - {firstMatch.album.name}</span>
           )}
         </span>
       )}
