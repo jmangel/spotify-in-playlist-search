@@ -126,7 +126,7 @@ function App() {
           setPlaylists((playlists) => {
             let newPlaylists = [...playlists];
             if (response.offset === 0) newPlaylists = Array.from(Array(response.total));
-            response.items.forEach((item: IPlaylist['metadata'], index: number) => newPlaylists[index + response.offset] = { metadata: item })
+            response.items.forEach((item: IPlaylist['metadata'], index: number) => newPlaylists[index + response.offset] ||= { metadata: item })
             return newPlaylists;
           })
           setNextMetadataLink(response.next)
