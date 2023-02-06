@@ -77,6 +77,7 @@ function App() {
   }, [accessToken])  // eslint-disable-line react-hooks/exhaustive-deps
 
   function loadTracks(index: number) {
+    console.warn('loading tracks for playlist', index)
     const url = `${playlists[index].metadata.tracks.href}?fields=items(track(name,artists(name),album(name)))`;
     return ajax({
       url,
@@ -89,6 +90,7 @@ function App() {
             playlists[index].data = {
               tracks: response.items.map(({ track }: { track: { name: string, artists: {}[] } }) => track).filter((track: {}) => !!track),
             };
+            console.warn('loaded tracks for playlist', index)
             return playlists;
           });
         }
@@ -116,6 +118,7 @@ function App() {
       },
       success: function(response) {
         if (response.items) {
+          console.warn('loading playlists metadata', playlists.length)
           setPlaylists(playlists => [...playlists, ...response.items.map((item: IPlaylist['metadata']) => { return { metadata: item }; })]);
           if (response.next) recursivelyGetPlaylists(response.next);
           else {
