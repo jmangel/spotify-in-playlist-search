@@ -95,6 +95,7 @@ function App() {
             playlist.data = {
               tracks: response.items.map(({ track }: { track: { name: string, artists: {}[] } }) => track).filter((track: {}) => !!track),
             };
+            playlists[index] = playlist;
             return playlists;
           });
         }
