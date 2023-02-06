@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ajax } from "jquery";
 import './App.css';
 import { Alert, Button, Input, Label, Progress, Spinner } from 'reactstrap';
-import Playlist from './Playlist';
+import Playlist, { IPlaylist } from './Playlist';
 
 /* TODO: store previous versions and don't reload same version
 Use the snapshot_id
@@ -41,8 +41,7 @@ function App() {
   const [devices, setDevices] = useState<{ id: string, is_active: boolean, name: string }[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState('');
 
-  const [playlists, setPlaylists] = useState<{ name: string, external_urls: { spotify: string }, tracks: { href: string }; uri: string; }[]>([]);
-  const [playlistsTracks, setPlaylistsTracks] = useState<{ playlist: { name: string, external_urls: { spotify: string } }, tracks: { name: string, uri: string, artists: { name: string }[], album: { name: string } }[] }[]>([]);
+  const [playlists, setPlaylists] = useState<IPlaylist[]>([]);
 
   const [playlistIndex, setPlaylistIndex] = useState(0);
 
@@ -51,31 +50,6 @@ function App() {
   const [initialCallHitRateLimit, setInitialCallHitRateLimit] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
-  // const [matchingPlaylists, setMatchingPlaylists] = useState<{ playlist?: { name: string, url: string }; tracks?: { name: string, artists: string[], album: string, trackIndexInPlaylist: number }[]; }[]>([]);
-
-  // useEffect(() => {
-  //   if (searchTerm === '') return;
-
-  //   setMatchingPlaylists(
-  //     playlistsTracks.map(({playlist, tracks}) => {
-  //       if (!playlist) return {};
-  //       return {
-  //         playlist: {
-  //           name: playlist.name,
-  //           url: playlist.external_urls.spotify
-  //         },
-  //         tracks: tracks.map(({name, artists, album}: { name: string, artists: { name: string }[], album: { name: string } }, index) => {
-  //           return {
-  //             name,
-  //             artists: artists.map(({name}) => name),
-  //             album: album.name,
-  //             trackIndexInPlaylist: index,
-  //           };
-  //         })//.filter(({name, artists, album}) => (`${name} ${artists.join(' ')} ${album}`.toLowerCase().includes(searchTerm.toLowerCase())))
-  //       };
-  //     })//.filter(({playlist, tracks}) => !!playlist && tracks.length > 0)
-  //   );
-  // }, [searchTerm, playlistsTracks])
 
   useEffect(() => {
     if (previousAccessToken) return;
@@ -133,7 +107,7 @@ function App() {
       return;
     }
 
-    const url = `${playlists[index].tracks.href}?fields=items(track(uri,name,artists(name),album(name)))`;
+    const url = `${playlists[index].metadata.tracks.href}?fields=items(track(name,artists(name),album(name)))`;
     setPlaylistIndex(index);
     ajax({
       url,
@@ -142,10 +116,12 @@ function App() {
       },
       success: function(response) {
         if (response.items && response.items[0]) {
-          setPlaylistsTracks(playlistsTracks => [...playlistsTracks, {
-            playlist: playlists[index],
-            tracks: response.items.map(({ track }: { track: { name: string, uri: string, artists: {}[] } }) => track).filter((track: {}) => !!track),
-          }]);
+          setPlaylists(playlists => {
+            playlists[index].data = {
+              tracks: response.items.map(({ track }: { track: { name: string, uri: string, artists: {}[] } }) => track).filter((track: {}) => !!track),
+            };
+            return playlists;
+          });
         }
         // TODO: recurse:
         // if (response.next) recursivelyGetPlaylists(response.next);
@@ -167,7 +143,7 @@ function App() {
   }, [accessToken, playlists])
 
   useEffect(() => {
-    if (!loadingPlaylists && playlists.length > 0) memoizedGetPlaylistTracks(0);
+    if (!loadingPlaylists && playlists.length > 0 && !playlists.some(({ data }) => !!data)) memoizedGetPlaylistTracks(0);
   }, [loadingPlaylists, playlists, memoizedGetPlaylistTracks])
 
   function recursivelyGetPlaylists(url = 'https://api.spotify.com/v1/me/playlists') {
@@ -178,7 +154,7 @@ function App() {
       },
       success: function(response) {
         if (response.items) {
-          setPlaylists(playlists => [...playlists, ...response.items]);
+          setPlaylists(playlists => [...playlists, ...response.items.map((item: IPlaylist['metadata']) => { return { metadata: item }; })]);
           if (response.next) recursivelyGetPlaylists(response.next);
           else {
             setLoadingPlaylists(false);
@@ -200,7 +176,6 @@ function App() {
     setLoading(true);
     setLoadingPlaylists(true);
     setPlaylists([]);
-    setPlaylistsTracks([]);
     recursivelyGetPlaylists();
   }
 
@@ -316,8 +291,8 @@ function App() {
             </div>
             <h3>Matching Playlists</h3>
             <div id="matching-playlists-links">
-              {playlistsTracks.map((data, index) => (
-                <Playlist playlist={{ metadata: playlists[index], data }} searchTerm={searchTerm} playPlaylistTrack={(songUri: string, offsetPosition: number) => playPlaylistTrack(playlists[index].uri, songUri, offsetPosition)} />
+              {playlists.map((playlist, index) => (
+                <Playlist playlist={playlist} searchTerm={searchTerm} playPlaylistTrack={(songUri: string, offsetPosition: number) => playPlaylistTrack(playlists[index].metadata.uri, songUri, offsetPosition)} />
               ))}
               {/* {matchingPlaylists.map(({ playlist, tracks }) => (
                 <Playlist playlist={playlist} tracks={tracks} searchTerm={searchTerm} />
