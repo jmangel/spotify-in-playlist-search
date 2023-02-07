@@ -112,7 +112,7 @@ function App() {
 
   const localStorageKey = (playlistId: string) => `playlistSnapshots_${playlistId}`;
 
-  const memoizedGetPlaylistTracks = useCallback((index: number) => {
+  const loadPlaylistTracks = useCallback((index: number) => {
     if (index >= playlists.length) {
       setLoading(false);
       return;
@@ -120,17 +120,8 @@ function App() {
 
     const playlistId = playlists[index].metadata.id
     const url = `https://api.spotify.com/v1/playlists/${playlistId}?fields=name,owner.id,description,images,snapshot_id,tracks.items(track(name,uri,artists(name),album(name)))`;
-    const rememberedPlaylistSnapshots = JSON.parse(localStorage.getItem(localStorageKey(playlistId)) || '{}');
-    const rememberedPlaylistSnapshot = rememberedPlaylistSnapshots[playlists[index].metadata.snapshot_id]
-    if (rememberedPlaylistSnapshot) {
-      setPlaylists(playlists => {
-        const newPlaylists = [...playlists];
-        newPlaylists[index].data = {
-          tracks: rememberedPlaylistSnapshot.tracks.items.map(({ track }: { track: { name: string, uri: string, artists: {}[] } }) => track).filter((track: {}) => !!track),
-        };
-        return newPlaylists;
-      });
-      memoizedGetPlaylistTracks(index + 1);
+    if (playlists[index].data) {
+      loadPlaylistTracks(index + 1);
     } else {
       ajax({
         url,
@@ -158,23 +149,45 @@ function App() {
           //   playlistsTracksUrls = playlists.map(({ tracks }) => tracks.href);
           //   console.log(playlistsTracksUrls);
           // }
-          memoizedGetPlaylistTracks(index + 1);
+          loadPlaylistTracks(index + 1);
         },
         error: function(response) {
           // TODO: handle other errors
           if (response.status === 429) {
-            setTimeout(() => memoizedGetPlaylistTracks(index), rateLimitWindowSeconds*1000)
+            setTimeout(() => loadPlaylistTracks(index), rateLimitWindowSeconds*1000)
           } else {
-            memoizedGetPlaylistTracks(index + 1);
+            loadPlaylistTracks(index + 1);
           }
         }
       });
     }
   }, [accessToken, playlists])
 
+  const getCachedPlaylistTracks = useCallback((index: number) => {
+    if (index >= playlists.length) {
+      loadPlaylistTracks(0);
+      return;
+    }
+
+    const rememberedPlaylistSnapshots = JSON.parse(localStorage.getItem(localStorageKey(playlists[index].metadata.id)) || '{}');
+    const rememberedPlaylistSnapshot = rememberedPlaylistSnapshots[playlists[index].metadata.snapshot_id]
+    if (rememberedPlaylistSnapshot) {
+      setPlaylists(playlists => {
+        const newPlaylists = [...playlists];
+        newPlaylists[index].data = {
+          tracks: rememberedPlaylistSnapshot.tracks.items.map(({ track }: { track: { name: string, uri: string, artists: {}[] } }) => track).filter((track: {}) => !!track),
+        };
+        return newPlaylists;
+      });
+    }
+
+    getCachedPlaylistTracks(index + 1);
+  }, [playlists, loadPlaylistTracks])
+
+
   useEffect(() => {
-    if (!loadingPlaylists && playlists.length > 0 && !playlists.some(({ data }) => !!data)) memoizedGetPlaylistTracks(0);
-  }, [loadingPlaylists, playlists, memoizedGetPlaylistTracks])
+    if (!loadingPlaylists && playlists.length > 0 && !playlists.some(({ data }) => !!data)) getCachedPlaylistTracks(0);
+  }, [loadingPlaylists, playlists, getCachedPlaylistTracks])
 
   function recursivelyGetPlaylists(url = 'https://api.spotify.com/v1/me/playlists') {
     ajax({
