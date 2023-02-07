@@ -15,6 +15,7 @@ interface ITrack {
 export interface IPlaylist {
   metadata: {
     name: string,
+    id: string,
     uri: string,
     external_urls: { spotify: string },
     tracks: { href: string },

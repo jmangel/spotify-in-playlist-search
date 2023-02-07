@@ -107,7 +107,7 @@ function App() {
       return;
     }
 
-    const url = `${playlists[index].metadata.tracks.href}?fields=items(track(name,uri,artists(name),album(name)))`;
+    const url = `https://api.spotify.com/v1/playlists/${playlists[index].metadata.id}?fields=snapshot_id,tracks.items(track(name,uri,artists(name),album(name)))`;
     setPlaylistIndex(index);
     ajax({
       url,
@@ -115,11 +115,11 @@ function App() {
         'Authorization': 'Bearer ' + accessToken
       },
       success: function(response) {
-        if (response.items && response.items[0]) {
+        if (response.tracks && response.tracks.items && response.tracks.items[0]) {
           setPlaylists(playlists => {
             const newPlaylists = [...playlists];
             newPlaylists[index].data = {
-              tracks: response.items.map(({ track }: { track: { name: string, uri: string, artists: {}[] } }) => track).filter((track: {}) => !!track),
+              tracks: response.tracks.items.map(({ track }: { track: { name: string, uri: string, artists: {}[] } }) => track).filter((track: {}) => !!track),
             };
             return newPlaylists;
           });
