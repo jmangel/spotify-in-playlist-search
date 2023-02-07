@@ -257,6 +257,58 @@ function App() {
                       },
                       position_ms: 0,
                     }),
+                    complete: function(response) {
+                      // try yet again, because sometimes the offset: uri method
+                      // can still fail to play even after loading, so we
+                      // fall back again to the offset: position
+                      if (response.status === 404) {
+                        ajax({
+                          headers: {
+                            'Authorization': 'Bearer ' + accessToken
+                          },
+                          url: `https://api.spotify.com/v1/me/player/play?device_id=${selectedDeviceId}`,
+                          type: 'PUT',
+                          data: JSON.stringify({
+                            context_uri: playlistUri,
+                            offset: {
+                              position: offsetPosition,
+                            },
+                            position_ms: 0,
+                          })
+                        })
+                      } else {
+                        setTimeout(() => {
+                          ajax({
+                            url: 'https://api.spotify.com/v1/me/player',
+                            headers: {
+                              'Authorization': 'Bearer ' + accessToken
+                            },
+                            complete: function(xhr) {
+                              const response = JSON.parse(xhr.responseText)
+                              if (!response?.is_playing) {
+                                setTimeout(
+                                  () => ajax({
+                                    headers: {
+                                      'Authorization': 'Bearer ' + accessToken
+                                    },
+                                    url: `https://api.spotify.com/v1/me/player/play?device_id=${selectedDeviceId}`,
+                                    type: 'PUT',
+                                    data: JSON.stringify({
+                                      context_uri: playlistUri,
+                                      offset: {
+                                        position: offsetPosition,
+                                      },
+                                      position_ms: 0,
+                                    })
+                                  }),
+                                  2000
+                                )
+                              }
+                            }
+                          })
+                        }, 1000)
+                      }
+                    }
                   }),
                   2000
                 )
