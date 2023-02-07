@@ -67,18 +67,17 @@ function Playlist(
   return firstMatch ? (
     <div>
       {isRememberedPlaylist(playlist) ? (
-        <span>{playlist.name} (remembered at {new Date(playlist.rememberedAt).toLocaleString()}):</span>
-        ) : (
-        <a target="_blank" href={playlist?.metadata?.external_urls?.spotify} rel="noreferrer">{playlist?.metadata?.name}:</a>
-      )}
-      {
-        isRememberedPlaylist(playlist) && (
-          <Button onClick={restorePlaylist} color="primary">
+        <>
+          <Button onClick={restorePlaylist} color="primary" className="py-0 px-2">
             Restore
           </Button>
-        )
-      }
-      <Button onClick={() => setExpanded(expanded => !expanded)} color='link' className="py-0 border-0 align-baseline">See {expanded ? 'less' : 'more'} song results</Button>
+          <small className="mx-1"><small><i>(remembered at {new Date(playlist.rememberedAt).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })})</i></small></small>
+          <strong>{playlist.name}:</strong>
+        </>
+        ) : (
+        <a target="_blank" href={playlist?.metadata?.external_urls?.spotify} rel="noreferrer"><strong>{playlist?.metadata?.name}</strong>:</a>
+      )}
+      <Button onClick={() => setExpanded(expanded => !expanded)} color='link' className="py-0 px-1 border-0 align-baseline">See {expanded ? 'less' : 'more'} song results</Button>
       {expanded ? (
         <div className="ml-1">
           <Table>
