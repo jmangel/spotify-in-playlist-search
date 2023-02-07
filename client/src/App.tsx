@@ -225,23 +225,36 @@ function App() {
         // start playing at the position, which might be an out-of-date song,
         // but it will force reload the playlist so that it will be up-to-date,
         // so a second request to the song uri should succeed
-        setTimeout(
-          () => ajax({
+        setTimeout(() => {
+          ajax({
+            url: 'https://api.spotify.com/v1/me/player',
             headers: {
               'Authorization': 'Bearer ' + accessToken
             },
-            url: `https://api.spotify.com/v1/me/player/play?device_id=${selectedDeviceId}`,
-            type: 'PUT',
-            data: JSON.stringify({
-              context_uri: playlistUri,
-              offset: {
-                uri: songUri,
-              },
-              position_ms: 0,
-            }),
-          }),
-          2000
-        )
+            complete: function(xhr) {
+              const response = JSON.parse(xhr.responseText)
+              if (response?.item?.uri !== songUri) {
+                setTimeout(
+                  () => ajax({
+                    headers: {
+                      'Authorization': 'Bearer ' + accessToken
+                    },
+                    url: `https://api.spotify.com/v1/me/player/play?device_id=${selectedDeviceId}`,
+                    type: 'PUT',
+                    data: JSON.stringify({
+                      context_uri: playlistUri,
+                      offset: {
+                        uri: songUri,
+                      },
+                      position_ms: 0,
+                    }),
+                  }),
+                  2000
+                )
+              }
+            }
+          })
+        }, 1000)
       },
     })
   }, [accessToken, selectedDeviceId])
