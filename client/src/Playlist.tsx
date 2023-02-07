@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button, Table } from 'reactstrap';
 
-interface ITrack {
+export interface ITrack {
   name: string,
   uri: string,
   artists: {
@@ -10,6 +10,14 @@ interface ITrack {
   album: {
     name: string
   }
+}
+
+export interface IRememberedPlaylist {
+  name: string,
+  description: string,
+  snapshot_id: string,
+  rememberedAt: Date,
+  tracks: ITrack[]
 }
 
 export interface IPlaylist {
@@ -26,7 +34,11 @@ export interface IPlaylist {
   }
 }
 
-function trackMatches(track: IPlaylist['data']['tracks'][number], searchTerm: string) {
+let isRememberedPlaylist = (object: IRememberedPlaylist| IPlaylist): object is IRememberedPlaylist => {
+  return 'rememberedAt' in object;
+}
+
+function trackMatches(track: ITrack, searchTerm: string) {
   return `${track.name} ${track.artists.map(({name}) => name).join(' ')} ${track.album.name}`.toLowerCase().includes((searchTerm || '').toLowerCase());
 }
 
@@ -36,7 +48,7 @@ function Playlist(
     searchTerm,
     playPlaylistTrack,
   } : {
-    playlist?: IPlaylist,
+    playlist: IPlaylist | IRememberedPlaylist,
     searchTerm: string,
     playPlaylistTrack: (songUri: string, offsetPosition: number) => void,
   }
@@ -45,12 +57,16 @@ function Playlist(
   const [firstMatch, setFirstMatch] = useState<ITrack | undefined>(undefined);
 
   useEffect(() => {
-    setFirstMatch((playlist?.data?.tracks || []).find((track) => trackMatches(track, searchTerm)))
-  }, [playlist?.data?.tracks, searchTerm]);
+    setFirstMatch(((isRememberedPlaylist(playlist) ? playlist.tracks : playlist?.data?.tracks) || []).find((track) => trackMatches(track, searchTerm)))
+  }, [playlist, searchTerm]);
 
   return firstMatch ? (
     <div>
-      <a target="_blank" href={playlist?.metadata?.external_urls?.spotify} rel="noreferrer">{playlist?.metadata?.name}:</a>
+      {isRememberedPlaylist(playlist) ? (
+        <span>{playlist.name} (remembered at {new Date(playlist.rememberedAt).toLocaleString()}):</span>
+        ) : (
+        <a target="_blank" href={playlist?.metadata?.external_urls?.spotify} rel="noreferrer">{playlist?.metadata?.name}:</a>
+      )}
       <Button onClick={() => setExpanded(expanded => !expanded)} color='link' className="py-0 border-0 align-baseline">See {expanded ? 'less' : 'more'} song results</Button>
       {expanded ? (
         <div className="ml-1">
@@ -73,13 +89,21 @@ function Playlist(
               </tr>
             </thead>
             <tbody>
-              {(playlist?.data?.tracks || []).map((track, index) => {
+              {((isRememberedPlaylist(playlist) ? playlist.tracks : playlist?.data?.tracks) || []).map((track, index) => {
                 const { name, uri, album, artists } = track;
                 return trackMatches(track, searchTerm) ? (
                   <tr>
-                    <td><Button onClick={() => playPlaylistTrack(uri, index)} color="primary">
-                      Play
-                    </Button></td>
+                    <td>
+                      {isRememberedPlaylist(playlist) ? (
+                        <Button onClick={() => console.warn('NOT IMPLEMENTED: restore remembered playlist')} color="primary">
+                          Restore (not yet implemented)
+                        </Button>
+                      ) : (
+                        <Button onClick={() => playPlaylistTrack(uri, index)} color="primary">
+                          Play
+                        </Button>
+                      )}
+                    </td>
                     <td>
                       {index + 1}
                     </td>

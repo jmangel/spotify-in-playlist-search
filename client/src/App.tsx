@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ajax } from "jquery";
 import './App.css';
 import { Alert, Button, Input, Label, Progress, Spinner } from 'reactstrap';
-import Playlist, { IPlaylist } from './Playlist';
+import Playlist, { IPlaylist, IRememberedPlaylist, ITrack } from './Playlist';
 
 /* TODO: store previous versions and don't reload same version
 Use the snapshot_id
@@ -50,6 +50,12 @@ function App() {
   const [initialCallHitRateLimit, setInitialCallHitRateLimit] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
+
+  const rememberedSnapshots = Object.values(localStorage).flatMap((stringified) => {
+    return (Object.values(JSON.parse(stringified)) as (IRememberedPlaylist & { tracks: { items: { track: ITrack }[] } })[]).map((value) => {
+      return { ...value, tracks: value.tracks.items.map(({ track }) => track) };
+    });
+  });
 
   useEffect(() => {
     if (previousAccessToken) return;
@@ -319,6 +325,12 @@ function App() {
               {/* {matchingPlaylists.map(({ playlist, tracks }) => (
                 <Playlist playlist={playlist} tracks={tracks} searchTerm={searchTerm} />
               ))} */}
+            </div>
+            <h3>Matching Remembered Playlists</h3>
+            <div>
+              {rememberedSnapshots.map((playlist, index) => (
+                <Playlist playlist={playlist} searchTerm={searchTerm} playPlaylistTrack={(songUri: string, offsetPosition: number) => playPlaylistTrack(playlists[index].metadata.uri, songUri, offsetPosition)} />
+              ))}
             </div>
           </div>
         ) : (
