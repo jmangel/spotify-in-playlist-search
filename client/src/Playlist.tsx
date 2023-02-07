@@ -53,6 +53,7 @@ function Playlist(
   }
 ) {
   const [expanded, setExpanded] = useState(false);
+  const [showNonmatchingSongs, setShowNonmatchingSongs] = useState(false);
   const [firstMatch, setFirstMatch] = useState<ITrack | undefined>(undefined);
 
   const trackMatches = useCallback((track: ITrack) => `${track.name} ${track.artists.map(({name}) => name).join(' ')} ${track.album.name}`.toLowerCase().includes((searchTerm || '').toLowerCase()),
@@ -77,9 +78,10 @@ function Playlist(
         ) : (
         <a target="_blank" href={playlist?.metadata?.external_urls?.spotify} rel="noreferrer"><strong>{playlist?.metadata?.name}</strong>:</a>
       )}
-      <Button onClick={() => setExpanded(expanded => !expanded)} color='link' className="py-0 px-1 border-0 align-baseline">See {expanded ? 'less' : 'more'} song results</Button>
+      <Button onClick={() => setExpanded(expanded => !expanded)} color='link' className="py-0 px-1 border-0 align-baseline">{expanded ? 'Hide' : 'Show'} additional matching songs</Button>
       {expanded ? (
         <div className="ml-1">
+          <Button onClick={() => setShowNonmatchingSongs(showNonmatchingSongs => !showNonmatchingSongs)} color='link' className="py-0 px-1 border-0 align-baseline">{showNonmatchingSongs ? 'Hide' : 'Show'} non-matching songs</Button>
           <Table>
             <thead>
               <tr>
@@ -101,7 +103,7 @@ function Playlist(
             <tbody>
               {((isRememberedPlaylist(playlist) ? playlist.tracks : playlist?.data?.tracks) || []).map((track, index) => {
                 const { name, uri, album, artists } = track;
-                return trackMatches(track) ? (
+                return (showNonmatchingSongs || trackMatches(track)) ? (
                   <tr>
                     <td>
                       {!isRememberedPlaylist(playlist) && (
