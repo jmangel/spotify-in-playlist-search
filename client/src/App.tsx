@@ -43,8 +43,6 @@ function App() {
 
   const [playlists, setPlaylists] = useState<IPlaylist[]>([]);
 
-  const [playlistIndex, setPlaylistIndex] = useState(0);
-
   const [loading, setLoading] = useState(true);
   const [loadingPlaylists, setLoadingPlaylists] = useState(true);
   const [initialCallHitRateLimit, setInitialCallHitRateLimit] = useState(false);
@@ -117,13 +115,11 @@ function App() {
   const memoizedGetPlaylistTracks = useCallback((index: number) => {
     if (index >= playlists.length) {
       setLoading(false);
-      setPlaylistIndex(index);
       return;
     }
 
     const playlistId = playlists[index].metadata.id
     const url = `https://api.spotify.com/v1/playlists/${playlistId}?fields=name,owner.id,description,images,snapshot_id,tracks.items(track(name,uri,artists(name),album(name)))`;
-    setPlaylistIndex(index);
     const rememberedPlaylistSnapshots = JSON.parse(localStorage.getItem(localStorageKey(playlistId)) || '{}');
     const rememberedPlaylistSnapshot = rememberedPlaylistSnapshots[playlists[index].metadata.snapshot_id]
     if (rememberedPlaylistSnapshot) {
@@ -392,11 +388,11 @@ function App() {
               )
             }
             <div className="text-center">
-              {loading ? 'Searching' : 'Searched'} {playlistIndex} / {playlists.length} playlists
+              {loading ? 'Searching' : 'Searched'} {playlists.filter((playlist) => !!playlist.data).length} / {playlists.length} playlists
             </div>
             <Progress
               animated={loading}
-              value={playlistIndex}
+              value={playlists.filter((playlist) => !!playlist.data).length}
               max={playlists.length}
               barStyle={{ backgroundColor: spotifyGreen }}
             />
