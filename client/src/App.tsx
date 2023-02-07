@@ -100,6 +100,8 @@ function App() {
 
   useEffect(() => setSelectedDeviceId(devices.find(({ is_active }) => is_active)?.id || ''), [devices])
 
+  const localStorageKey = (playlistId: string) => `playlistSnapshots_${playlistId}`;
+
   const memoizedGetPlaylistTracks = useCallback((index: number) => {
     if (index >= playlists.length) {
       setLoading(false);
@@ -110,44 +112,56 @@ function App() {
     const playlistId = playlists[index].metadata.id
     const url = `https://api.spotify.com/v1/playlists/${playlistId}?fields=name,description,images,snapshot_id,tracks.items(track(name,uri,artists(name),album(name)))`;
     setPlaylistIndex(index);
-    ajax({
-      url,
-      headers: {
-        'Authorization': 'Bearer ' + accessToken
-      },
-      success: function(response) {
-        if (response.tracks && response.tracks.items && response.tracks.items[0]) {
-          setPlaylists(playlists => {
-            const newPlaylists = [...playlists];
-            newPlaylists[index].data = {
-              tracks: response.tracks.items.map(({ track }: { track: { name: string, uri: string, artists: {}[] } }) => track).filter((track: {}) => !!track),
-            };
-            return newPlaylists;
-          });
-        }
-        const localStorageKey = `playlistSnapshots_${playlistId}`;
-        const localStorageValue = JSON.parse(localStorage.getItem(localStorageKey) || '{}');
-        if (!localStorageValue[response.snapshot_id]) {
-          localStorageValue[response.snapshot_id] = { ...response, rememberedAt: new Date() };
-          localStorage.setItem(localStorageKey, JSON.stringify(localStorageValue));
-        }
-        // TODO: recurse:
-        // if (response.next) recursivelyGetPlaylists(response.next);
-        // else {
-        //   playlistsTracksUrls = playlists.map(({ tracks }) => tracks.href);
-        //   console.log(playlistsTracksUrls);
-        // }
-        memoizedGetPlaylistTracks(index + 1);
-      },
-      error: function(response) {
-        // TODO: handle other errors
-        if (response.status === 429) {
-          setTimeout(() => memoizedGetPlaylistTracks(index), rateLimitWindowSeconds*1000)
-        } else {
+    const rememberedPlaylistSnapshots = JSON.parse(localStorage.getItem(localStorageKey(playlistId)) || '{}');
+    const rememberedPlaylistSnapshot = rememberedPlaylistSnapshots[playlists[index].metadata.snapshot_id]
+    if (rememberedPlaylistSnapshot) {
+      setPlaylists(playlists => {
+        const newPlaylists = [...playlists];
+        newPlaylists[index].data = {
+          tracks: rememberedPlaylistSnapshot.tracks.items.map(({ track }: { track: { name: string, uri: string, artists: {}[] } }) => track).filter((track: {}) => !!track),
+        };
+        return newPlaylists;
+      });
+      memoizedGetPlaylistTracks(index + 1);
+    } else {
+      ajax({
+        url,
+        headers: {
+          'Authorization': 'Bearer ' + accessToken
+        },
+        success: function(response) {
+          if (response.tracks && response.tracks.items && response.tracks.items[0]) {
+            setPlaylists(playlists => {
+              const newPlaylists = [...playlists];
+              newPlaylists[index].data = {
+                tracks: response.tracks.items.map(({ track }: { track: { name: string, uri: string, artists: {}[] } }) => track).filter((track: {}) => !!track),
+              };
+              return newPlaylists;
+            });
+          }
+          const localStorageValue = JSON.parse(localStorage.getItem(localStorageKey(playlistId)) || '{}');
+          if (!localStorageValue[response.snapshot_id]) {
+            localStorageValue[response.snapshot_id] = { ...response, rememberedAt: new Date() };
+            localStorage.setItem(localStorageKey(playlistId), JSON.stringify(localStorageValue));
+          }
+          // TODO: recurse:
+          // if (response.next) recursivelyGetPlaylists(response.next);
+          // else {
+          //   playlistsTracksUrls = playlists.map(({ tracks }) => tracks.href);
+          //   console.log(playlistsTracksUrls);
+          // }
           memoizedGetPlaylistTracks(index + 1);
+        },
+        error: function(response) {
+          // TODO: handle other errors
+          if (response.status === 429) {
+            setTimeout(() => memoizedGetPlaylistTracks(index), rateLimitWindowSeconds*1000)
+          } else {
+            memoizedGetPlaylistTracks(index + 1);
+          }
         }
-      }
-    });
+      });
+    }
   }, [accessToken, playlists])
 
   useEffect(() => {

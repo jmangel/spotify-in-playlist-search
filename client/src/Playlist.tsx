@@ -17,6 +17,7 @@ export interface IPlaylist {
     name: string,
     id: string,
     uri: string,
+    snapshot_id: string,
     external_urls: { spotify: string },
     tracks: { href: string },
   },
