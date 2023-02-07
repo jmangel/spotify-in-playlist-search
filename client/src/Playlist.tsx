@@ -69,6 +69,13 @@ function Playlist(
         ) : (
         <a target="_blank" href={playlist?.metadata?.external_urls?.spotify} rel="noreferrer">{playlist?.metadata?.name}:</a>
       )}
+      {
+        isRememberedPlaylist(playlist) && (
+          <Button onClick={restorePlaylist} color="primary">
+            Restore
+          </Button>
+        )
+      }
       <Button onClick={() => setExpanded(expanded => !expanded)} color='link' className="py-0 border-0 align-baseline">See {expanded ? 'less' : 'more'} song results</Button>
       {expanded ? (
         <div className="ml-1">
@@ -96,11 +103,7 @@ function Playlist(
                 return trackMatches(track, searchTerm) ? (
                   <tr>
                     <td>
-                      {isRememberedPlaylist(playlist) ? (
-                        <Button onClick={restorePlaylist} color="primary">
-                          Restore
-                        </Button>
-                      ) : (
+                      {!isRememberedPlaylist(playlist) && (
                         <Button onClick={() => playPlaylistTrack(uri, index)} color="primary">
                           Play
                         </Button>
