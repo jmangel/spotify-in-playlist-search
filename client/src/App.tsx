@@ -107,7 +107,8 @@ function App() {
       return;
     }
 
-    const url = `https://api.spotify.com/v1/playlists/${playlists[index].metadata.id}?fields=snapshot_id,tracks.items(track(name,uri,artists(name),album(name)))`;
+    const playlistId = playlists[index].metadata.id
+    const url = `https://api.spotify.com/v1/playlists/${playlistId}?fields=name,description,images,snapshot_id,tracks.items(track(name,uri,artists(name),album(name)))`;
     setPlaylistIndex(index);
     ajax({
       url,
@@ -123,6 +124,12 @@ function App() {
             };
             return newPlaylists;
           });
+        }
+        const localStorageKey = `playlistSnapshots_${playlistId}`;
+        const localStorageValue = JSON.parse(localStorage.getItem(localStorageKey) || '{}');
+        if (!localStorageValue[response.snapshot_id]) {
+          localStorageValue[response.snapshot_id] = { ...response, rememberedAt: new Date() };
+          localStorage.setItem(localStorageKey, JSON.stringify(localStorageValue));
         }
         // TODO: recurse:
         // if (response.next) recursivelyGetPlaylists(response.next);
