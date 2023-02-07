@@ -57,6 +57,8 @@ function App() {
     });
   });
 
+  const [showRememberedPlaylists, setShowRememberedPlaylists] = useState(false);
+
   useEffect(() => {
     if (previousAccessToken) return;
 
@@ -326,12 +328,17 @@ function App() {
                 <Playlist playlist={playlist} tracks={tracks} searchTerm={searchTerm} />
               ))} */}
             </div>
-            <h3>Matching Remembered Playlists</h3>
-            <div>
-              {rememberedSnapshots.map((playlist, index) => (
-                <Playlist playlist={playlist} searchTerm={searchTerm} playPlaylistTrack={(songUri: string, offsetPosition: number) => playPlaylistTrack(playlists[index].metadata.uri, songUri, offsetPosition)} />
-              ))}
-            </div>
+            <h3>
+              Matching Remembered Playlists
+              <Button onClick={() => setShowRememberedPlaylists(showRememberedPlaylists => !showRememberedPlaylists)} color='link' className="py-0 border-0 align-baseline">{showRememberedPlaylists ? 'Hide' : 'Show'}</Button>
+            </h3>
+            {showRememberedPlaylists && (
+              <div>
+                {rememberedSnapshots.map((playlist, index) => (
+                  <Playlist playlist={playlist} searchTerm={searchTerm} playPlaylistTrack={(songUri: string, offsetPosition: number) => playPlaylistTrack(playlists[index].metadata.uri, songUri, offsetPosition)} />
+                ))}
+              </div>
+            )}
           </div>
         ) : (
         <div>
