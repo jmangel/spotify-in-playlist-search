@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button, Table } from 'reactstrap';
 
 export interface ITrack {
@@ -39,10 +39,6 @@ let isRememberedPlaylist = (object: IRememberedPlaylist| IPlaylist): object is I
   return 'rememberedAt' in object;
 }
 
-function trackMatches(track: ITrack, searchTerm: string) {
-  return `${track.name} ${track.artists.map(({name}) => name).join(' ')} ${track.album.name}`.toLowerCase().includes((searchTerm || '').toLowerCase());
-}
-
 function Playlist(
   {
     playlist,
@@ -59,9 +55,14 @@ function Playlist(
   const [expanded, setExpanded] = useState(false);
   const [firstMatch, setFirstMatch] = useState<ITrack | undefined>(undefined);
 
+  const trackMatches = useCallback((track: ITrack) => `${track.name} ${track.artists.map(({name}) => name).join(' ')} ${track.album.name}`.toLowerCase().includes((searchTerm || '').toLowerCase()),
+    [searchTerm])
+
+  const tracks = isRememberedPlaylist(playlist) ? playlist.tracks : playlist?.data?.tracks;
+
   useEffect(() => {
-    setFirstMatch(((isRememberedPlaylist(playlist) ? playlist.tracks : playlist?.data?.tracks) || []).find((track) => trackMatches(track, searchTerm)))
-  }, [playlist, searchTerm]);
+    setFirstMatch(((isRememberedPlaylist(playlist) ? playlist.tracks : playlist?.data?.tracks) || []).find((track) => trackMatches(track)))
+  }, [playlist, tracks, trackMatches]);
 
   return firstMatch ? (
     <div>
@@ -101,7 +102,7 @@ function Playlist(
             <tbody>
               {((isRememberedPlaylist(playlist) ? playlist.tracks : playlist?.data?.tracks) || []).map((track, index) => {
                 const { name, uri, album, artists } = track;
-                return trackMatches(track, searchTerm) ? (
+                return trackMatches(track) ? (
                   <tr>
                     <td>
                       {!isRememberedPlaylist(playlist) && (
