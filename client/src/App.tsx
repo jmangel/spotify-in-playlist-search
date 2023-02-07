@@ -426,7 +426,7 @@ function App() {
             </h3>
             {showRememberedPlaylists && (
               <div>
-                {rememberedSnapshots.filter(({ owner }) => owner.id !== profileInfo.id).map((playlist, index) => (
+                {rememberedSnapshots.filter(({ owner }) => owner?.id !== profileInfo.id).map((playlist, index) => (
                   <Playlist
                     playlist={playlist}
                     searchTerm={searchTerm}
