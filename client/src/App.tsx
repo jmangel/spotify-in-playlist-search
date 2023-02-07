@@ -344,8 +344,9 @@ function App() {
               max={playlists.length}
               barStyle={{ backgroundColor: spotifyGreen }}
             />
-            <div>Playing on
-              <Input type="select" name="select" value={selectedDeviceId} onChange={(e) => setSelectedDeviceId(e.target.value)}>
+            <div className="d-flex">
+              <Label className="flex-shrink-0 pr-1">Playing on</Label>
+              <Input className="flex-grow-1 ms-2" type="select" name="select" value={selectedDeviceId} onChange={(e) => setSelectedDeviceId(e.target.value)}>
                 {devices.map(({ name, id }) => (
                   <option value={id}>{name}</option>
                 ))}
