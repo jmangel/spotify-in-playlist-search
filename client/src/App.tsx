@@ -36,7 +36,7 @@ function App() {
   const [accessToken, setAccessToken] = useState('');
   const previousAccessToken = usePrevious(accessToken);
 
-  const [profileInfo, setProfileInfo] = useState<{ display_name?: string, external_urls?: { spotify: string }}>({});
+  const [profileInfo, setProfileInfo] = useState<{ display_name?: string, external_urls?: { spotify: string }, id?: string}>({});
 
   const [devices, setDevices] = useState<{ id: string, is_active: boolean, name: string }[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState('');
@@ -264,6 +264,38 @@ function App() {
     })
   }, [accessToken, selectedDeviceId])
 
+  const restorePlaylist = useCallback((playlist: IRememberedPlaylist) => {
+    const { name, description, rememberedAt, tracks } = playlist
+    ajax({
+      headers: {
+        'Authorization': 'Bearer ' + accessToken
+      },
+      url: `https://api.spotify.com/v1/users/${profileInfo?.id}/playlists`,
+      type: 'POST',
+      data: JSON.stringify({
+        name,
+        description: description ? `(copied on ${new Date(rememberedAt).toLocaleDateString(undefined, {dateStyle: 'short'})}) - ${description}` : `(copied on ${new Date().toLocaleDateString(undefined, {dateStyle: 'short'})})`,
+        public: false,
+        collaborative: false,
+      }),
+      success: function(response) {
+        ajax({
+          url: `https://api.spotify.com/v1/playlists/${response.id}/tracks`,
+          headers: {
+            'Authorization': 'Bearer ' + accessToken
+          },
+          type: 'POST',
+          data: JSON.stringify({
+            uris: tracks.map(({ uri }) => uri),
+          }),
+          success: function(response) {
+            console.warn(response);
+          }
+        })
+      },
+    })
+  }, [accessToken, profileInfo?.id])
+
   return (
     <div className="container">
       {
@@ -335,7 +367,12 @@ function App() {
             {showRememberedPlaylists && (
               <div>
                 {rememberedSnapshots.map((playlist, index) => (
-                  <Playlist playlist={playlist} searchTerm={searchTerm} playPlaylistTrack={(songUri: string, offsetPosition: number) => playPlaylistTrack(playlists[index].metadata.uri, songUri, offsetPosition)} />
+                  <Playlist
+                    playlist={playlist}
+                    searchTerm={searchTerm}
+                    playPlaylistTrack={(songUri: string, offsetPosition: number) => playPlaylistTrack(playlists[index].metadata.uri, songUri, offsetPosition)}
+                    restorePlaylist={() => restorePlaylist(playlist)}
+                  />
                 ))}
               </div>
             )}

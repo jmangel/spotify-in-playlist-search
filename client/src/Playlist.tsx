@@ -47,10 +47,12 @@ function Playlist(
     playlist,
     searchTerm,
     playPlaylistTrack,
+    restorePlaylist,
   } : {
     playlist: IPlaylist | IRememberedPlaylist,
     searchTerm: string,
     playPlaylistTrack: (songUri: string, offsetPosition: number) => void,
+    restorePlaylist?: () => void,
   }
 ) {
   const [expanded, setExpanded] = useState(false);
@@ -95,8 +97,8 @@ function Playlist(
                   <tr>
                     <td>
                       {isRememberedPlaylist(playlist) ? (
-                        <Button onClick={() => console.warn('NOT IMPLEMENTED: restore remembered playlist')} color="primary">
-                          Restore (not yet implemented)
+                        <Button onClick={restorePlaylist} color="primary">
+                          Restore
                         </Button>
                       ) : (
                         <Button onClick={() => playPlaylistTrack(uri, index)} color="primary">
