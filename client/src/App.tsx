@@ -118,7 +118,7 @@ function App() {
     }
 
     const playlistId = playlists[index].metadata.id
-    const url = `https://api.spotify.com/v1/playlists/${playlistId}?fields=name,description,images,snapshot_id,tracks.items(track(name,uri,artists(name),album(name)))`;
+    const url = `https://api.spotify.com/v1/playlists/${playlistId}?fields=name,owner.id,description,images,snapshot_id,tracks.items(track(name,uri,artists(name),album(name)))`;
     setPlaylistIndex(index);
     const rememberedPlaylistSnapshots = JSON.parse(localStorage.getItem(localStorageKey(playlistId)) || '{}');
     const rememberedPlaylistSnapshot = rememberedPlaylistSnapshots[playlists[index].metadata.snapshot_id]
@@ -366,7 +366,7 @@ function App() {
             </h3>
             {showRememberedPlaylists && (
               <div>
-                {rememberedSnapshots.map((playlist, index) => (
+                {rememberedSnapshots.filter(({ owner }) => owner.id !== profileInfo.id).map((playlist, index) => (
                   <Playlist
                     playlist={playlist}
                     searchTerm={searchTerm}

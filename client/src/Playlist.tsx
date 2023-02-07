@@ -17,6 +17,7 @@ export interface IRememberedPlaylist {
   description: string,
   snapshot_id: string,
   rememberedAt: Date,
+  owner: { id: string },
   tracks: ITrack[]
 }
 
