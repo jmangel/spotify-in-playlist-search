@@ -38,8 +38,11 @@ function App() {
 
   const [profileInfo, setProfileInfo] = useState<{ display_name?: string, external_urls?: { spotify: string }}>({});
 
-  const [playlists, setPlaylists] = useState<{ name: string, external_urls: { spotify: string }, tracks: { href: string }; }[]>([]);
-  const [playlistsTracks, setPlaylistsTracks] = useState<{ playlist: { name: string, external_urls: { spotify: string } }, tracks: { name: string, artists: { name: string }[], album: { name: string } }[] }[]>([]);
+  const [devices, setDevices] = useState<{ id: string, is_active: boolean, name: string }[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState('');
+
+  const [playlists, setPlaylists] = useState<{ name: string, external_urls: { spotify: string }, tracks: { href: string }; uri: string; }[]>([]);
+  const [playlistsTracks, setPlaylistsTracks] = useState<{ playlist: { name: string, external_urls: { spotify: string } }, tracks: { name: string, uri: string, artists: { name: string }[], album: { name: string } }[] }[]>([]);
 
   const [playlistIndex, setPlaylistIndex] = useState(0);
 
@@ -48,21 +51,23 @@ function App() {
   const [initialCallHitRateLimit, setInitialCallHitRateLimit] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [matchingPlaylists, setMatchingPlaylists] = useState<{ playlist?: { name: string, url: string }; tracks?: { name: string, artists: string[], album: string, trackIndexInPlaylist: number }[]; }[]>([]);
+  const [matchingPlaylists, setMatchingPlaylists] = useState<{ playlist?: { name: string, url: string, uri: string }; tracks?: { name: string, uri: string, artists: string[], album: string, trackIndexInPlaylist: number }[]; }[]>([]);
 
   useEffect(() => {
     if (searchTerm === '') return;
 
-    setMatchingPlaylists(playlistsTracks.map(({playlist, tracks}) => {
+    setMatchingPlaylists(playlistsTracks.map(({playlist, tracks}, index) => {
       if (!playlist) return {};
       return {
         playlist: {
           name: playlist.name,
-          url: playlist.external_urls.spotify
+          url: playlist.external_urls.spotify,
+          uri: playlists[index].uri,
         },
-        tracks: tracks.map(({name, artists, album}: { name: string, artists: { name: string }[], album: { name: string } }, index) => {
+        tracks: tracks.map(({name, uri, artists, album}: { name: string, uri: string, artists: { name: string }[], album: { name: string } }, index) => {
           return {
             name,
+            uri,
             artists: artists.map(({name}) => name),
             album: album.name,
             trackIndexInPlaylist: index,
@@ -70,7 +75,7 @@ function App() {
         }).filter(({name, artists, album}) => (`${name} ${artists.join(' ')} ${album}`.toLowerCase().includes(searchTerm.toLowerCase())))
       };
     }).filter(({playlist, tracks}) => !!playlist && tracks.length > 0));
-  }, [searchTerm, playlistsTracks])
+  }, [searchTerm, playlistsTracks, playlists])
 
   useEffect(() => {
     if (previousAccessToken) return;
@@ -99,8 +104,27 @@ function App() {
           else setInitialCallHitRateLimit(false);
         }
       });
+      ajax({
+        url: 'https://api.spotify.com/v1/me/player/devices',
+        headers: {
+          'Authorization': 'Bearer ' + accessToken
+        },
+        success: function(response) {
+          // setInitialCallHitRateLimit(false);
+          setDevices(response.devices);
+          // recursivelyGetPlaylists();
+
+        },
+        error: function(response) {
+          // if (response.status === 401) setAccessToken('');
+          // else if (response.status === 429) setInitialCallHitRateLimit(true);
+          // else setInitialCallHitRateLimit(false);
+        }
+      });
     }
   }, [accessToken])  // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => setSelectedDeviceId(devices.find(({ is_active }) => is_active)?.id || ''), [devices])
 
   const memoizedGetPlaylistTracks = useCallback((index: number) => {
     if (index >= playlists.length) {
@@ -109,7 +133,7 @@ function App() {
       return;
     }
 
-    const url = `${playlists[index].tracks.href}?fields=items(track(name,artists(name),album(name)))`;
+    const url = `${playlists[index].tracks.href}?fields=items(track(uri,name,artists(name),album(name)))`;
     setPlaylistIndex(index);
     ajax({
       url,
@@ -120,7 +144,7 @@ function App() {
         if (response.items && response.items[0]) {
           setPlaylistsTracks(playlistsTracks => [...playlistsTracks, {
             playlist: playlists[index],
-            tracks: response.items.map(({ track }: { track: { name: string, artists: {}[] } }) => track).filter((track: {}) => !!track),
+            tracks: response.items.map(({ track }: { track: { name: string, uri: string, artists: {}[] } }) => track).filter((track: {}) => !!track),
           }]);
         }
         // TODO: recurse:
@@ -180,6 +204,61 @@ function App() {
     recursivelyGetPlaylists();
   }
 
+  const playPlaylistTrack = useCallback((playlistUri: string | undefined, songUri: string, offsetPosition: number) => {
+    ajax({
+      headers: {
+        'Authorization': 'Bearer ' + accessToken
+      },
+      url: `https://api.spotify.com/v1/me/player/play?device_id=${selectedDeviceId}`,
+      type: 'PUT',
+      data: JSON.stringify({
+        context_uri: playlistUri,
+        offset: {
+          position: offsetPosition,
+        },
+        position_ms: 0,
+      }),
+      success: function(response) {
+        // We want to make this call twice, because if we call with offset: uri
+        // immediately, it might fail if the device hasn't loaded the most
+        // up-to-date playlist snapshot; if we pass in offset: position, it will
+        // start playing at the position, which might be an out-of-date song,
+        // but it will force reload the playlist so that it will be up-to-date,
+        // so a second request to the song uri should succeed
+        setTimeout(() => {
+          ajax({
+            url: 'https://api.spotify.com/v1/me/player',
+            headers: {
+              'Authorization': 'Bearer ' + accessToken
+            },
+            complete: function(xhr) {
+              const response = JSON.parse(xhr.responseText)
+              if (response?.item?.uri !== songUri) {
+                setTimeout(
+                  () => ajax({
+                    headers: {
+                      'Authorization': 'Bearer ' + accessToken
+                    },
+                    url: `https://api.spotify.com/v1/me/player/play?device_id=${selectedDeviceId}`,
+                    type: 'PUT',
+                    data: JSON.stringify({
+                      context_uri: playlistUri,
+                      offset: {
+                        uri: songUri,
+                      },
+                      position_ms: 0,
+                    }),
+                  }),
+                  2000
+                )
+              }
+            }
+          })
+        }, 1000)
+      },
+    })
+  }, [accessToken, selectedDeviceId])
+
   return (
     <div className="container">
       {
@@ -228,10 +307,17 @@ function App() {
               max={playlists.length}
               barStyle={{ backgroundColor: spotifyGreen }}
             />
+            <div>Playing on
+              <Input type="select" name="select" value={selectedDeviceId} onChange={(e) => setSelectedDeviceId(e.target.value)}>
+                {devices.map(({ name, id }) => (
+                  <option value={id}>{name}</option>
+                ))}
+              </Input>
+            </div>
             <h3>Matching Playlists</h3>
             <div id="matching-playlists-links">
               {matchingPlaylists.map(({ playlist, tracks }) => (
-                <MatchingPlaylist playlist={playlist} tracks={tracks} />
+                <MatchingPlaylist playlist={playlist} tracks={tracks} playPlaylistTrack={(songUri: string, offsetPosition: number) => playPlaylistTrack(playlist?.uri, songUri, offsetPosition)} />
               ))}
             </div>
           </div>
