@@ -59,6 +59,26 @@ function App() {
 
   const [showRememberedPlaylists, setShowRememberedPlaylists] = useState(false);
 
+  const loadDevices = useCallback(() => {
+    ajax({
+      url: 'https://api.spotify.com/v1/me/player/devices',
+      headers: {
+        'Authorization': 'Bearer ' + accessToken
+      },
+      success: function(response) {
+        // setInitialCallHitRateLimit(false);
+        setDevices(response.devices);
+        // recursivelyGetPlaylists();
+
+      },
+      error: function(response) {
+        // if (response.status === 401) setAccessToken('');
+        // else if (response.status === 429) setInitialCallHitRateLimit(true);
+        // else setInitialCallHitRateLimit(false);
+      }
+    });
+  }, [accessToken])
+
   useEffect(() => {
     if (previousAccessToken) return;
 
@@ -86,23 +106,7 @@ function App() {
           else setInitialCallHitRateLimit(false);
         }
       });
-      ajax({
-        url: 'https://api.spotify.com/v1/me/player/devices',
-        headers: {
-          'Authorization': 'Bearer ' + accessToken
-        },
-        success: function(response) {
-          // setInitialCallHitRateLimit(false);
-          setDevices(response.devices);
-          // recursivelyGetPlaylists();
-
-        },
-        error: function(response) {
-          // if (response.status === 401) setAccessToken('');
-          // else if (response.status === 429) setInitialCallHitRateLimit(true);
-          // else setInitialCallHitRateLimit(false);
-        }
-      });
+      loadDevices();
     }
   }, [accessToken])  // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -346,11 +350,14 @@ function App() {
             />
             <div className="d-flex">
               <Label className="flex-shrink-0 pr-1">Playing on</Label>
-              <Input className="flex-grow-1 ms-2" type="select" name="select" value={selectedDeviceId} onChange={(e) => setSelectedDeviceId(e.target.value)}>
+              <Input className="flex-grow-1 mx-2" type="select" name="select" value={selectedDeviceId} onChange={(e) => setSelectedDeviceId(e.target.value)}>
                 {devices.map(({ name, id }) => (
                   <option value={id}>{name}</option>
                 ))}
               </Input>
+              <Button onClick={loadDevices} className="flex-shrink-0">
+                Refresh devices
+              </Button>
             </div>
             <h3>Matching Playlists</h3>
             <div id="matching-playlists-links">
