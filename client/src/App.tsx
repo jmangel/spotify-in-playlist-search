@@ -110,7 +110,7 @@ function App() {
     }
   }, [accessToken])  // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => setSelectedDeviceId(devices.find(({ is_active }) => is_active)?.id || ''), [devices])
+  useEffect(() => setSelectedDeviceId(selectedDeviceId => devices.find(({ is_active }) => is_active)?.id || selectedDeviceId || ''), [devices])
 
   const localStorageKey = (playlistId: string) => `playlistSnapshots_${playlistId}`;
 
