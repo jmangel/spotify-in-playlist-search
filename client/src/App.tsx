@@ -57,7 +57,7 @@ function App() {
 
   const [showRememberedPlaylists, setShowRememberedPlaylists] = useState(false);
 
-  const [localStorageError, setLocalStorageError] = useState<unknown>();
+  const [localStorageError, setLocalStorageError] = useState<string>();
 
   const loadDevices = useCallback(() => {
     ajax({
@@ -146,7 +146,18 @@ function App() {
             try {
               localStorage.setItem(localStorageKey(playlistId), JSON.stringify(localStorageValue));
             } catch (err) {
-              setLocalStorageError(err);
+              if (err instanceof DOMException &&
+                // everything except Firefox
+                (err.code === 22 ||
+                  // Firefox
+                  err.code === 1014 ||
+                  // test name field too, because code might not be present
+                  // everything except Firefox
+                  err.name === "QuotaExceededError" ||
+                  // Firefox
+                  err.name === "NS_ERROR_DOM_QUOTA_REACHED")
+              ) setLocalStorageError('Local storage quota exceeded, app will continue to work as expected, but will not cache and remember playlists')
+              else setLocalStorageError(JSON.stringify(err))
             }
           }
           // TODO: recurse:
@@ -428,7 +439,7 @@ function App() {
             </div>
             {localStorageError && (
               <Alert color="danger">
-                {JSON.stringify(localStorageError)}
+                {localStorageError}
               </Alert>
             )}
             <h3>Matching Playlists</h3>
