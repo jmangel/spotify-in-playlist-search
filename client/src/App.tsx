@@ -57,6 +57,8 @@ function App() {
 
   const [showRememberedPlaylists, setShowRememberedPlaylists] = useState(false);
 
+  const [localStorageError, setLocalStorageError] = useState<unknown>();
+
   const loadDevices = useCallback(() => {
     ajax({
       url: 'https://api.spotify.com/v1/me/player/devices',
@@ -141,7 +143,11 @@ function App() {
           const localStorageValue = JSON.parse(localStorage.getItem(localStorageKey(playlistId)) || '{}');
           if (!localStorageValue[response.snapshot_id]) {
             localStorageValue[response.snapshot_id] = { ...response, rememberedAt: new Date() };
-            localStorage.setItem(localStorageKey(playlistId), JSON.stringify(localStorageValue));
+            try {
+              localStorage.setItem(localStorageKey(playlistId), JSON.stringify(localStorageValue));
+            } catch (err) {
+              setLocalStorageError(err);
+            }
           }
           // TODO: recurse:
           // if (response.next) recursivelyGetPlaylists(response.next);
@@ -420,6 +426,11 @@ function App() {
                 Refresh devices
               </Button>
             </div>
+            {localStorageError && (
+              <Alert color="danger">
+                {JSON.stringify(localStorageError)}
+              </Alert>
+            )}
             <h3>Matching Playlists</h3>
             <div id="matching-playlists-links">
               {playlists.map((playlist, index) => (
