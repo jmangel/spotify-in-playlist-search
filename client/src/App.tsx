@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ajax } from "jquery";
 import './App.css';
-import { Alert, Button, Input, Label, Progress, Spinner } from 'reactstrap';
+import { Alert, Button, Input, Label, Progress, Spinner, UncontrolledAlert } from 'reactstrap';
 import Playlist, { IPlaylist, IRememberedPlaylist, ITrack } from './Playlist';
 
 /* TODO: store previous versions and don't reload same version
@@ -438,9 +438,9 @@ function App() {
               </Button>
             </div>
             {localStorageError && (
-              <Alert color="danger">
+              <UncontrolledAlert color="danger">
                 {localStorageError}
-              </Alert>
+              </UncontrolledAlert>
             )}
             <h3>Matching Playlists</h3>
             <div id="matching-playlists-links">
