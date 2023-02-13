@@ -240,11 +240,12 @@ function App() {
   }
 
   const playPlaylistTrack = useCallback((playlistUri: string | undefined, songUri: string, offsetPosition: number) => {
+    const url = selectedDeviceId ? `https://api.spotify.com/v1/me/player/play?device_id=${selectedDeviceId}` : 'https://api.spotify.com/v1/me/player/play'
     ajax({
       headers: {
         'Authorization': 'Bearer ' + accessToken
       },
-      url: `https://api.spotify.com/v1/me/player/play?device_id=${selectedDeviceId}`,
+      url,
       type: 'PUT',
       data: JSON.stringify({
         context_uri: playlistUri,
