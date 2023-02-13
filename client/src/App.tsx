@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ajax } from "jquery";
+import { ajax, ajaxSetup } from "jquery";
 import './App.css';
 import { Alert, Button, Input, Label, Progress, Spinner, UncontrolledAlert } from 'reactstrap';
 import Playlist, { IPlaylist, IRememberedPlaylist, ITrack } from './Playlist';
@@ -109,6 +109,17 @@ function App() {
       loadDevices();
     }
   }, [accessToken])  // eslint-disable-line react-hooks/exhaustive-deps
+
+  const [genericAjaxError, setGenericAjaxError] = useState<string>();
+
+  useEffect(() => {
+    ajaxSetup({
+      // THIS GETS OVERWRITTEN BY CUSTOM ERROR HANDLERS
+      error: function (x, status, error) {
+        setGenericAjaxError(JSON.stringify(x))
+      }
+    });
+  }, [])
 
   useEffect(() => setSelectedDeviceId(selectedDeviceId => devices.find(({ is_active }) => is_active)?.id || selectedDeviceId || ''), [devices])
 
@@ -441,6 +452,11 @@ function App() {
             {localStorageError && (
               <UncontrolledAlert color="danger">
                 {localStorageError}
+              </UncontrolledAlert>
+            )}
+            {genericAjaxError && (
+              <UncontrolledAlert color="danger" toggle={() => setGenericAjaxError(undefined)}>
+                {genericAjaxError}
               </UncontrolledAlert>
             )}
             <h3>Matching Playlists</h3>
