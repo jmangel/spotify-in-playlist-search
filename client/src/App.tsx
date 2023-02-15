@@ -441,6 +441,7 @@ function App() {
             <div className="d-flex">
               <Label className="flex-shrink-0 pr-1">Playing on</Label>
               <Input className="flex-grow-1 mx-2" type="select" name="select" value={selectedDeviceId} onChange={(e) => setSelectedDeviceId(e.target.value)}>
+                <option value=""></option>
                 {devices.map(({ name, id }) => (
                   <option value={id}>{name}</option>
                 ))}
