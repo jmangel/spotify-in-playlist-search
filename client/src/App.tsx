@@ -471,6 +471,7 @@ function App() {
                 <Playlist
                   key={playlist.metadata.snapshot_id}
                   playlist={playlist}
+                  profileId={profileInfo.id!}
                   searchTerm={searchTerm}
                   playPlaylistTrack={(songUri: string, offsetPosition: number) => playPlaylistTrack(playlists[index].metadata.uri, songUri, offsetPosition)}
                   restorePlaylist={() => restorePlaylist(playlist)}
@@ -490,6 +491,7 @@ function App() {
                   <Playlist
                     key={playlist.snapshot_id}
                     playlist={playlist}
+                    profileId={profileInfo.id!}
                     searchTerm={searchTerm}
                     playPlaylistTrack={() => {}}
                     restorePlaylist={() => restorePlaylist(playlist)}

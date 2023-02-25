@@ -25,6 +25,7 @@ export interface IPlaylist {
   metadata: {
     name: string,
     description: string,
+    owner: { id: string },
     id: string,
     uri: string,
     snapshot_id: string,
@@ -44,11 +45,13 @@ function Playlist(
   {
     playlist,
     searchTerm,
+    profileId,
     playPlaylistTrack,
     restorePlaylist,
   } : {
     playlist: IPlaylist | IRememberedPlaylist,
     searchTerm: string,
+    profileId: string,
     playPlaylistTrack: (songUri: string, offsetPosition: number) => void,
     restorePlaylist?: () => void,
   }
@@ -66,6 +69,8 @@ function Playlist(
     setFirstMatch(((tracks) || []).find((track) => trackMatches(track)))
   }, [playlist, tracks, trackMatches]);
 
+  const ownerId = isRememberedPlaylist(playlist) ? playlist.owner.id : playlist.metadata.owner.id;
+
   return firstMatch ? (
     <div>
       <Button onClick={restorePlaylist} color="primary" className="py-0 px-2 me-1">
@@ -77,8 +82,9 @@ function Playlist(
           <strong>{playlist.name}:</strong>
         </>
         ) : (
-        <a target="_blank" href={playlist?.metadata?.external_urls?.spotify} rel="noreferrer"><strong>{playlist?.metadata?.name}</strong>:</a>
+        <a target="_blank" href={playlist?.metadata?.external_urls?.spotify} rel="noreferrer"><strong>{playlist?.metadata?.name}</strong></a>
       )}
+      <small><i> (<a target="_blank" rel="noreferrer" href={`https://open.spotify.com/user/${ownerId}`}>{(ownerId === profileId) ? 'me' : ownerId}</a>):</i></small>
       <Button onClick={() => setExpanded(expanded => !expanded)} color='link' className="py-0 px-1 border-0 align-baseline">{expanded ? 'Hide' : 'Show'} additional matching songs</Button>
       {expanded ? (
         <div className="ml-1">
