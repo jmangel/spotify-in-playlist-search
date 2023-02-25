@@ -13,7 +13,7 @@ export interface ITrack {
 }
 
 export interface IRememberedPlaylist {
-  id?: string,
+  id: string,
   name: string,
   description: string,
   snapshot_id: string,

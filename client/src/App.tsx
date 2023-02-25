@@ -49,9 +49,10 @@ function App() {
 
   const [searchTerm, setSearchTerm] = useState('');
 
-  const rememberedSnapshots = Object.values(localStorage).flatMap((stringified) => {
+  const rememberedSnapshots = Object.entries(localStorage).flatMap(([key, stringified]) => {
+    const playlistId = key.replace(/playlistSnapshots_/, '');
     return (Object.values(JSON.parse(stringified)) as (IRememberedPlaylist & { tracks: { items: { track: ITrack }[] } })[]).map((value) => {
-      return { ...value, tracks: value.tracks.items.map(({ track }) => track) };
+      return { ...value, tracks: value.tracks.items.map(({ track }) => track), id: playlistId };
     });
   });
 
@@ -153,7 +154,7 @@ function App() {
           }
           const localStorageValue = JSON.parse(localStorage.getItem(localStorageKey(playlistId)) || '{}');
           if (!localStorageValue[response.snapshot_id]) {
-            localStorageValue[response.snapshot_id] = { ...response, rememberedAt: new Date(), id: playlistId };
+            localStorageValue[response.snapshot_id] = { ...response, rememberedAt: new Date() };
             try {
               localStorage.setItem(localStorageKey(playlistId), JSON.stringify(localStorageValue));
             } catch (err) {
