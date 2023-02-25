@@ -358,6 +358,11 @@ function App() {
     })
   }, [accessToken, selectedDeviceId])
 
+  function decodeHtml(input: string) {
+    var doc = new DOMParser().parseFromString(input, "text/html");
+    return doc.documentElement.textContent;
+  }
+
   const restorePlaylist = useCallback((playlist: IRememberedPlaylist | IPlaylist) => {
     const { name, description, rememberedAt, tracks } = isRememberedPlaylist(playlist) ? playlist : { ...playlist.metadata, ...playlist.data, rememberedAt: new Date() }
     ajax({
@@ -368,7 +373,7 @@ function App() {
       type: 'POST',
       data: JSON.stringify({
         name,
-        description: description ? `(copied on ${new Date(rememberedAt).toLocaleDateString(undefined, {dateStyle: 'short'})}) - ${description}` : `(copied on ${new Date().toLocaleDateString(undefined, {dateStyle: 'short'})})`,
+        description: description ? `(copied on ${new Date(rememberedAt).toLocaleDateString(undefined, {dateStyle: 'short'})}) - ${decodeHtml(description)}` : `(copied on ${new Date().toLocaleDateString(undefined, {dateStyle: 'short'})})`,
         public: false,
         collaborative: false,
       }),
