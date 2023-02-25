@@ -57,13 +57,13 @@ function Playlist(
   const [showNonmatchingSongs, setShowNonmatchingSongs] = useState(false);
   const [firstMatch, setFirstMatch] = useState<ITrack | undefined>(undefined);
 
-  const trackMatches = useCallback((track: ITrack) => `${track.name} ${track.artists.map(({name}) => name).join(' ')} ${track.album.name}`.toLowerCase().includes((searchTerm || '').toLowerCase()),
+  const trackMatches = useCallback((track: ITrack) => !!track && `${track.name} ${track.artists.map(({name}) => name).join(' ')} ${track.album.name}`.toLowerCase().includes((searchTerm || '').toLowerCase()),
     [searchTerm])
 
   const tracks = isRememberedPlaylist(playlist) ? playlist.tracks : playlist?.data?.tracks;
 
   useEffect(() => {
-    setFirstMatch(((isRememberedPlaylist(playlist) ? playlist.tracks : playlist?.data?.tracks) || []).find((track) => trackMatches(track)))
+    setFirstMatch(((tracks) || []).find((track) => trackMatches(track)))
   }, [playlist, tracks, trackMatches]);
 
   return firstMatch ? (
