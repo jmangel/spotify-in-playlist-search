@@ -13,6 +13,7 @@ export interface ITrack {
 }
 
 export interface IRememberedPlaylist {
+  id?: string,
   name: string,
   description: string,
   snapshot_id: string,
@@ -79,7 +80,13 @@ function Playlist(
       {isRememberedPlaylist(playlist) ? (
         <>
           <small className="me-1"><small><i>(remembered at {new Date(playlist.rememberedAt).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })})</i></small></small>
-          <strong>{playlist.name}:</strong>
+          {
+            playlist.id ? (
+              <a target="_blank" href={`https://open.spotify.com/playlist/${playlist.id}`} rel="noreferrer"><strong>{playlist.name}</strong></a>
+              ) : (
+              <strong>{playlist.name}</strong>
+            )
+          }
         </>
         ) : (
         <a target="_blank" href={playlist?.metadata?.external_urls?.spotify} rel="noreferrer"><strong>{playlist?.metadata?.name}</strong></a>

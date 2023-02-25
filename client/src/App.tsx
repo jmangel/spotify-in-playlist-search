@@ -153,7 +153,7 @@ function App() {
           }
           const localStorageValue = JSON.parse(localStorage.getItem(localStorageKey(playlistId)) || '{}');
           if (!localStorageValue[response.snapshot_id]) {
-            localStorageValue[response.snapshot_id] = { ...response, rememberedAt: new Date() };
+            localStorageValue[response.snapshot_id] = { ...response, rememberedAt: new Date(), id: playlistId };
             try {
               localStorage.setItem(localStorageKey(playlistId), JSON.stringify(localStorageValue));
             } catch (err) {
