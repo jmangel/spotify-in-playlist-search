@@ -70,7 +70,7 @@ function Playlist(
     setFirstMatch(((tracks) || []).find((track) => trackMatches(track)))
   }, [playlist, tracks, trackMatches]);
 
-  const ownerId = isRememberedPlaylist(playlist) ? playlist.owner.id : playlist.metadata.owner.id;
+  const ownerId = isRememberedPlaylist(playlist) ? playlist.owner?.id : playlist.metadata.owner.id;
 
   return firstMatch ? (
     <div>
@@ -91,7 +91,12 @@ function Playlist(
         ) : (
         <a target="_blank" href={playlist?.metadata?.external_urls?.spotify} rel="noreferrer"><strong>{playlist?.metadata?.name}</strong></a>
       )}
-      <small><i> (<a target="_blank" rel="noreferrer" href={`https://open.spotify.com/user/${ownerId}`}>{(ownerId === profileId) ? 'me' : ownerId}</a>):</i></small>
+      {
+        ownerId && (
+          <small><i> (<a target="_blank" rel="noreferrer" href={`https://open.spotify.com/user/${ownerId}`}>{(ownerId === profileId) ? 'me' : ownerId}</a>)</i></small>
+        )
+      }
+      :
       <Button onClick={() => setExpanded(expanded => !expanded)} color='link' className="py-0 px-1 border-0 align-baseline">{expanded ? 'Hide' : 'Show'} additional matching songs</Button>
       {expanded ? (
         <div className="ml-1">
