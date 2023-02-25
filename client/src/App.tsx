@@ -286,7 +286,7 @@ function App() {
                     headers: {
                       'Authorization': 'Bearer ' + accessToken
                     },
-                    url: `https://api.spotify.com/v1/me/player/play?device_id=${selectedDeviceId}`,
+                    url,
                     type: 'PUT',
                     data: JSON.stringify({
                       context_uri: playlistUri,
@@ -304,7 +304,7 @@ function App() {
                           headers: {
                             'Authorization': 'Bearer ' + accessToken
                           },
-                          url: `https://api.spotify.com/v1/me/player/play?device_id=${selectedDeviceId}`,
+                          url,
                           type: 'PUT',
                           data: JSON.stringify({
                             context_uri: playlistUri,
@@ -329,7 +329,7 @@ function App() {
                                     headers: {
                                       'Authorization': 'Bearer ' + accessToken
                                     },
-                                    url: `https://api.spotify.com/v1/me/player/play?device_id=${selectedDeviceId}`,
+                                    url,
                                     type: 'PUT',
                                     data: JSON.stringify({
                                       context_uri: playlistUri,
