@@ -68,12 +68,12 @@ function Playlist(
 
   return firstMatch ? (
     <div>
-      <Button onClick={restorePlaylist} color="primary" className="py-0 px-2">
+      <Button onClick={restorePlaylist} color="primary" className="py-0 px-2 me-1">
         Save copy
       </Button>
       {isRememberedPlaylist(playlist) ? (
         <>
-          <small className="mx-1"><small><i>(remembered at {new Date(playlist.rememberedAt).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })})</i></small></small>
+          <small className="me-1"><small><i>(remembered at {new Date(playlist.rememberedAt).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })})</i></small></small>
           <strong>{playlist.name}:</strong>
         </>
         ) : (
