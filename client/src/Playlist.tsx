@@ -24,6 +24,7 @@ export interface IRememberedPlaylist {
 export interface IPlaylist {
   metadata: {
     name: string,
+    description: string,
     id: string,
     uri: string,
     snapshot_id: string,
@@ -35,7 +36,7 @@ export interface IPlaylist {
   }
 }
 
-let isRememberedPlaylist = (object: IRememberedPlaylist| IPlaylist): object is IRememberedPlaylist => {
+export const isRememberedPlaylist = (object: IRememberedPlaylist| IPlaylist): object is IRememberedPlaylist => {
   return 'rememberedAt' in object;
 }
 
@@ -67,11 +68,11 @@ function Playlist(
 
   return firstMatch ? (
     <div>
+      <Button onClick={restorePlaylist} color="primary" className="py-0 px-2">
+        Save copy
+      </Button>
       {isRememberedPlaylist(playlist) ? (
         <>
-          <Button onClick={restorePlaylist} color="primary" className="py-0 px-2">
-            Restore
-          </Button>
           <small className="mx-1"><small><i>(remembered at {new Date(playlist.rememberedAt).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })})</i></small></small>
           <strong>{playlist.name}:</strong>
         </>

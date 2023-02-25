@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ajax, ajaxSetup } from "jquery";
 import './App.css';
 import { Alert, Button, Input, Label, Progress, Spinner, UncontrolledAlert } from 'reactstrap';
-import Playlist, { IPlaylist, IRememberedPlaylist, ITrack } from './Playlist';
+import Playlist, { IPlaylist, IRememberedPlaylist, isRememberedPlaylist, ITrack } from './Playlist';
 
 /* TODO: store previous versions and don't reload same version
 Use the snapshot_id
@@ -358,8 +358,8 @@ function App() {
     })
   }, [accessToken, selectedDeviceId])
 
-  const restorePlaylist = useCallback((playlist: IRememberedPlaylist) => {
-    const { name, description, rememberedAt, tracks } = playlist
+  const restorePlaylist = useCallback((playlist: IRememberedPlaylist | IPlaylist) => {
+    const { name, description, rememberedAt, tracks } = isRememberedPlaylist(playlist) ? playlist : { ...playlist.metadata, ...playlist.data, rememberedAt: new Date() }
     ajax({
       headers: {
         'Authorization': 'Bearer ' + accessToken
@@ -463,7 +463,12 @@ function App() {
             <h3>Matching Playlists</h3>
             <div id="matching-playlists-links">
               {playlists.map((playlist, index) => (
-                <Playlist playlist={playlist} searchTerm={searchTerm} playPlaylistTrack={(songUri: string, offsetPosition: number) => playPlaylistTrack(playlists[index].metadata.uri, songUri, offsetPosition)} />
+                <Playlist
+                  playlist={playlist}
+                  searchTerm={searchTerm}
+                  playPlaylistTrack={(songUri: string, offsetPosition: number) => playPlaylistTrack(playlists[index].metadata.uri, songUri, offsetPosition)}
+                  restorePlaylist={() => restorePlaylist(playlist)}
+                />
               ))}
               {/* {matchingPlaylists.map(({ playlist, tracks }) => (
                 <Playlist playlist={playlist} tracks={tracks} searchTerm={searchTerm} />
@@ -479,7 +484,7 @@ function App() {
                   <Playlist
                     playlist={playlist}
                     searchTerm={searchTerm}
-                    playPlaylistTrack={(songUri: string, offsetPosition: number) => playPlaylistTrack(playlists[index].metadata.uri, songUri, offsetPosition)}
+                    playPlaylistTrack={() => {}}
                     restorePlaylist={() => restorePlaylist(playlist)}
                   />
                 ))}
