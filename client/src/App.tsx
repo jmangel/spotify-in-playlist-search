@@ -469,6 +469,7 @@ function App() {
             <div id="matching-playlists-links">
               {playlists.map((playlist, index) => (
                 <Playlist
+                  key={playlist.metadata.snapshot_id}
                   playlist={playlist}
                   searchTerm={searchTerm}
                   playPlaylistTrack={(songUri: string, offsetPosition: number) => playPlaylistTrack(playlists[index].metadata.uri, songUri, offsetPosition)}
@@ -487,6 +488,7 @@ function App() {
               <div>
                 {rememberedSnapshots.filter(({ owner }) => owner?.id !== profileInfo.id).map((playlist, index) => (
                   <Playlist
+                    key={playlist.snapshot_id}
                     playlist={playlist}
                     searchTerm={searchTerm}
                     playPlaylistTrack={() => {}}
