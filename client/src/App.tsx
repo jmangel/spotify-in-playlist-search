@@ -80,16 +80,20 @@ function App() {
     });
   }, [accessToken])
 
+  const refreshAccessToken = () => {
+   return ajax({
+      url: '/refresh_token',
+      xhrFields: { withCredentials: true },
+    }).done(function(data) {
+      setAccessToken(data.access_token);
+    });
+  }
+
   useEffect(() => {
     if (previousAccessToken) return;
 
     if (!accessToken){
-      ajax({
-        url: '/refresh_token',
-        xhrFields: { withCredentials: true },
-      }).done(function(data) {
-        setAccessToken(data.access_token);
-      });
+      refreshAccessToken();
     } else {
       ajax({
         url: 'https://api.spotify.com/v1/me',
@@ -117,6 +121,7 @@ function App() {
     ajaxSetup({
       // THIS GETS OVERWRITTEN BY CUSTOM ERROR HANDLERS
       error: function (x, status, error) {
+        if (x.responseJSON.error.status === 401) refreshAccessToken()
         setGenericAjaxError(JSON.stringify(x))
       }
     });
