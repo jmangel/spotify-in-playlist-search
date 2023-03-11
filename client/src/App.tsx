@@ -173,8 +173,34 @@ function App() {
                   err.name === "QuotaExceededError" ||
                   // Firefox
                   err.name === "NS_ERROR_DOM_QUOTA_REACHED")
-              ) setLocalStorageError('Local storage quota exceeded, app will continue to work as expected, but will not cache and remember playlists')
-              else setLocalStorageError(JSON.stringify(err))
+              ) {
+                if (!!profileInfo?.id) {
+                  Object.entries(localStorage).forEach(([key, stringified]) => {
+                    const snapshots = Object.values(JSON.parse(stringified)) as (IRememberedPlaylist & { tracks: { items: { track: ITrack }[] } })[]
+                    if (snapshots.some((snapshot) => snapshot.owner?.id === profileInfo.id)){
+                      console.log('forgetting playlist snapshots for playlist', key);
+                      localStorage.removeItem(key);
+                    }
+                  });
+                  try {
+                    localStorage.setItem(localStorageKey(playlistId), JSON.stringify(localStorageValue));
+                  } catch (err) {
+                    if (err instanceof DOMException &&
+                      // everything except Firefox
+                      (err.code === 22 ||
+                        // Firefox
+                        err.code === 1014 ||
+                        // test name field too, because code might not be present
+                        // everything except Firefox
+                        err.name === "QuotaExceededError" ||
+                        // Firefox
+                        err.name === "NS_ERROR_DOM_QUOTA_REACHED")
+                    ) {
+                      setLocalStorageError('Local storage quota exceeded, app will continue to work as expected, but will not cache and remember playlists');
+                    } else setLocalStorageError(JSON.stringify(err))
+                  }
+                } else setLocalStorageError('Local storage quota exceeded, app will continue to work as expected, but will not cache and remember playlists');
+              } else setLocalStorageError(JSON.stringify(err))
             }
           }
           // TODO: recurse:
