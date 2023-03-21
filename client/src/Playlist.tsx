@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { Button, Table } from 'reactstrap';
 
 export interface ITrack {
@@ -138,7 +138,7 @@ function Playlist(
               {((isRememberedPlaylist(playlist) ? playlist.tracks : playlist?.data?.tracks) || []).map((track, index) => {
                 const { name, uri, album, artists } = track;
                 return (showNonmatchingSongs || trackMatches(track)) ? (
-                  <tr>
+                  <tr key={uri}>
                     <td>
                       {!isRememberedPlaylist(playlist) && (
                         <Button onClick={() => playPlaylistTrack(uri, index)} color="primary">
@@ -160,7 +160,7 @@ function Playlist(
                     </td>
                   </tr>
                 ) : (
-                  <></>
+                  <Fragment key={`fragment-${uri}`}></Fragment>
                 );
               })}
             </tbody>
