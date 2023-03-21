@@ -42,19 +42,13 @@ function App() {
   const [selectedDeviceId, setSelectedDeviceId] = useState('');
 
   const [playlists, setPlaylists] = useState<IPlaylist[]>([]);
+  const [rememberedSnapshots, setRememberedSnapshots] = useState<IRememberedPlaylist[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [loadingPlaylists, setLoadingPlaylists] = useState(true);
   const [initialCallHitRateLimit, setInitialCallHitRateLimit] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
-
-  const rememberedSnapshots = Object.entries(localStorage).flatMap(([key, stringified]) => {
-    const playlistId = key.replace(/playlistSnapshots_/, '');
-    return (Object.values(JSON.parse(stringified)) as (IRememberedPlaylist & { tracks: { items: { track: ITrack }[] } })[]).map((value) => {
-      return { ...value, tracks: value.tracks.items.map(({ track }) => track), id: playlistId };
-    });
-  });
 
   const [showRememberedPlaylists, setShowRememberedPlaylists] = useState(false);
 
@@ -125,6 +119,15 @@ function App() {
         setGenericAjaxError(JSON.stringify(x))
       }
     });
+
+    const rememberedSnapshots = Object.entries(localStorage).flatMap(([key, stringified]) => {
+      const playlistId = key.replace(/playlistSnapshots_/, '');
+      return (Object.values(JSON.parse(stringified)) as (IRememberedPlaylist & { tracks: { items: { track: ITrack }[] } })[]).map((value) => {
+        return { ...value, tracks: value.tracks.items.map(({ track }) => track), id: playlistId };
+      });
+    });
+
+    setRememberedSnapshots(rememberedSnapshots);
   }, [])
 
   useEffect(() => setSelectedDeviceId(selectedDeviceId => devices.find(({ is_active }) => is_active)?.id || selectedDeviceId || ''), [devices])
