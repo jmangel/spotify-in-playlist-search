@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { Button, Table } from 'reactstrap';
 import { IAudioFeatures } from "./App";
 
@@ -51,14 +51,14 @@ function Playlist(
     profileId,
     playPlaylistTrack,
     restorePlaylist,
-    averageFeatures,
+    tracksFeatures,
   } : {
     playlist: IPlaylist | IRememberedPlaylist,
     searchTerm: string,
     profileId: string,
     playPlaylistTrack: (songUri: string, offsetPosition: number) => void,
     restorePlaylist?: () => void,
-    averageFeatures?: IAudioFeatures
+    tracksFeatures?: { [trackId: string]: IAudioFeatures }
   }
 ) {
   const [expanded, setExpanded] = useState(false);
@@ -84,6 +84,33 @@ function Playlist(
   // }, [searchTerm]);
 
   const tracks = isRememberedPlaylist(playlist) ? playlist.tracks : playlist?.data?.tracks;
+
+  const playlistTrackFeatures = useMemo(() => {
+    if (!tracksFeatures || !tracks) {
+      return undefined;
+    }
+
+    return tracks.map(({ id }) => tracksFeatures[id]).filter(tf => !!tf);
+  }, [tracksFeatures, tracks]);
+
+  const averageFeatures = useMemo(() => {
+    if (!playlistTrackFeatures || playlistTrackFeatures.length === 0) {
+      return undefined;
+    }
+    const average = (feature: keyof IAudioFeatures) => playlistTrackFeatures.reduce((sum, featureObject) => sum + featureObject[feature], 0) / playlistTrackFeatures.length;
+    return {
+      acousticness: average('acousticness'),
+      danceability: average('danceability'),
+      energy: average('energy'),
+      instrumentalness: average('instrumentalness'),
+      liveness: average('liveness'),
+      loudness: average('loudness'),
+      speechiness: average('speechiness'),
+      tempo: average('tempo'),
+      happiness: average('happiness'),
+      majorness: average('majorness')
+    }
+  }, [playlistTrackFeatures])
 
   useEffect(() => {
     setFirstMatch(((tracks) || []).find((track) => trackMatches(track)))
@@ -181,7 +208,7 @@ function Playlist(
             happiness: number,
             majorness: number
            */}
-          {averageFeatures && (
+          {playlistTrackFeatures && averageFeatures && (
             <div>
               <h5>Average Features</h5>
               <ul>
@@ -196,6 +223,7 @@ function Playlist(
                 <li>Happiness: {averageFeatures.happiness}</li>
                 <li>Majorness: {averageFeatures.majorness}</li>
               </ul>
+              <em>Calculated based on {playlistTrackFeatures.length} out of {tracks.length}</em>
             </div>
           )}
         </div>

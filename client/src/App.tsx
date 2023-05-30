@@ -264,54 +264,6 @@ function App() {
     }
   }, [loading, playlists, accessToken]);
 
-  const playlistAverageFeatures = useCallback((playlist: IPlaylist) => {
-    const tracks = playlist?.data?.tracks;
-    if (!tracks) return undefined;
-
-    const features = tracks.map((track) => tracksFeatures[track.id]).filter((feature) => !!feature);
-    if (features.length === 0) return undefined;
-
-    const averageFeatures = features.reduce((acc, feature) => {
-      if (!feature) return acc;
-      return {
-        acousticness: acc.acousticness + feature.acousticness,
-        danceability: acc.danceability + feature.danceability,
-        energy: acc.energy + feature.energy,
-        instrumentalness: acc.instrumentalness + feature.instrumentalness,
-        liveness: acc.liveness + feature.liveness,
-        loudness: acc.loudness + feature.loudness,
-        speechiness: acc.speechiness + feature.speechiness,
-        tempo: acc.tempo + feature.tempo,
-        happiness: acc.happiness + feature.happiness,
-        majorness: acc.majorness + feature.majorness,
-      };
-    }, {
-      acousticness: 0,
-      danceability: 0,
-      energy: 0,
-      instrumentalness: 0,
-      liveness: 0,
-      loudness: 0,
-      speechiness: 0,
-      tempo: 0,
-      happiness: 0,
-      majorness: 0,
-    });
-
-    return {
-      acousticness: averageFeatures.acousticness / features.length,
-      danceability: averageFeatures.danceability / features.length,
-      energy: averageFeatures.energy / features.length,
-      instrumentalness: averageFeatures.instrumentalness / features.length,
-      liveness: averageFeatures.liveness / features.length,
-      loudness: averageFeatures.loudness / features.length,
-      speechiness: averageFeatures.speechiness / features.length,
-      tempo: averageFeatures.tempo / features.length,
-      happiness: averageFeatures.happiness / features.length,
-      majorness: averageFeatures.majorness / features.length,
-    };
-  }, [tracksFeatures]);
-
   const localStorageKey = (playlistId: string) => `playlistSnapshots_${playlistId}`;
 
   const loadPlaylistTracks = useCallback((index: number) => {
@@ -690,7 +642,7 @@ function App() {
                   searchTerm={(searchTerm || '').toLowerCase()}
                   playPlaylistTrack={(songUri: string, offsetPosition: number) => playPlaylistTrack(playlists[index].metadata.uri, songUri, offsetPosition)}
                   restorePlaylist={() => restorePlaylist(playlist)}
-                  averageFeatures={playlistAverageFeatures(playlist)}
+                  tracksFeatures={tracksFeatures}
                 />
               ))}
               {/* {matchingPlaylists.map(({ playlist, tracks }) => (
@@ -711,6 +663,7 @@ function App() {
                     searchTerm={searchTerm}
                     playPlaylistTrack={() => {}}
                     restorePlaylist={() => restorePlaylist(playlist)}
+                    tracksFeatures={tracksFeatures}
                   />
                 ))}
               </div>
