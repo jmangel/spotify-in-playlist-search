@@ -195,6 +195,8 @@ function App() {
               'Authorization': 'Bearer ' + accessToken
             },
             success: function(response) {
+              console.warn('response', response);
+              console.warn('response.audio_features', response.audio_features);
               resolve(response.audio_features);
             },
             error: function(response) {
@@ -220,6 +222,8 @@ function App() {
 
         responses.forEach((batchFeatures) => {
           batchFeatures.forEach((trackFeatures: TrackFeaturesResponse) => {
+            if (!trackFeatures) return;
+            console.warn('responses', responses, 'batchFeatures', batchFeatures, 'trackFeatures', trackFeatures);
             newTracksFeatures[trackFeatures.id] = {
               acousticness: trackFeatures.acousticness,
               danceability: trackFeatures.danceability,
