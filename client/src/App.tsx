@@ -4,6 +4,7 @@ import './App.css';
 import { Alert, Button, Input, Label, Progress, Spinner, UncontrolledAlert } from 'reactstrap';
 import Playlist, { IPlaylist, IRememberedPlaylist, isRememberedPlaylist, ITrack } from './Playlist';
 import SimilarityGraph from './SimilarityGraph';
+import SimilarityUmap from './SimilarityUmap';
 
 /* TODO: store previous versions and don't reload same version
 Use the snapshot_id
@@ -672,6 +673,7 @@ function App() {
             <div>
               <h1>Playlist Similarity Visualization</h1>
               <SimilarityGraph playlists={playlists} tracksFeatures={tracksFeatures} />
+              <SimilarityUmap playlists={playlists} tracksFeatures={tracksFeatures} />
             </div>
           </div>
         ) : (
