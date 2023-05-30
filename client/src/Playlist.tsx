@@ -152,7 +152,7 @@ function Playlist(
               <tr>
                 <th></th>
                 <th>
-                  Track # in Playlist
+                  Track #
                 </th>
                 <th>
                   Song
@@ -162,6 +162,9 @@ function Playlist(
                 </th>
                 <th>
                   Album
+                </th>
+                <th>
+                  Acousticness
                 </th>
               </tr>
             </thead>
@@ -188,6 +191,9 @@ function Playlist(
                     </td>
                     <td>
                       {album.name}
+                    </td>
+                    <td>
+                      {(tracksFeatures && tracksFeatures[track.id] && tracksFeatures[track.id].acousticness) || '--'}
                     </td>
                   </tr>
                 ) : (
