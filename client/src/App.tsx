@@ -188,18 +188,27 @@ function App() {
       const idsString = batch.join(',');
 
       const promise = new Promise<any>((resolve, reject) => {
-        ajax({
-          url: `https://api.spotify.com/v1/audio-features?ids=${idsString}`,
-          headers: {
-            'Authorization': 'Bearer ' + accessToken
-          },
-          success: function(response) {
-            resolve(response.audio_features);
-          },
-          error: function(response) {
-            reject(response);
-          }
-        });
+        const makeRequest = () => {
+          ajax({
+            url: `https://api.spotify.com/v1/audio-features?ids=${idsString}`,
+            headers: {
+              'Authorization': 'Bearer ' + accessToken
+            },
+            success: function(response) {
+              resolve(response.audio_features);
+            },
+            error: function(response) {
+              if (response.status === 429) {
+                // Retry after waiting
+                setTimeout(makeRequest, rateLimitWindowSeconds * 1000);
+              } else {
+                reject(response);
+              }
+            }
+          });
+        };
+
+        makeRequest();
       });
 
       batchPromises.push(promise);
@@ -249,7 +258,6 @@ function App() {
       valence: number;
       mode: number;
     }
-
   }, [loading, playlists, accessToken]);
 
   const playlistAverageFeatures = useCallback((playlist: IPlaylist) => {
