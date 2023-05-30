@@ -3,6 +3,7 @@ import { Button, Table } from 'reactstrap';
 
 export interface ITrack {
   name: string,
+  id: string,
   uri: string,
   artists: {
     name: string

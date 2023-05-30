@@ -142,6 +142,22 @@ function App() {
 
   useEffect(() => setSelectedDeviceId(selectedDeviceId => devices.find(({ is_active }) => is_active)?.id || selectedDeviceId || ''), [devices])
 
+  useEffect(() => {
+    if (loading) return;
+
+    // get a unique set of track ids across all playlists
+    const trackIds = new Set<string>();
+    playlists.forEach(({ data }) => {
+      if (data) {
+        data.tracks.forEach((track) => {
+          trackIds.add(track.id);
+        });
+      }
+    });
+
+    console.warn('done loading, here are the track ids', trackIds);
+  }, [loading, playlists])
+
   const localStorageKey = (playlistId: string) => `playlistSnapshots_${playlistId}`;
 
   const loadPlaylistTracks = useCallback((index: number) => {
@@ -151,7 +167,7 @@ function App() {
     }
 
     const playlistId = playlists[index].metadata.id
-    const url = `https://api.spotify.com/v1/playlists/${playlistId}?fields=name,owner.id,description,images,snapshot_id,tracks.items(track(name,uri,artists(name),album(name)))`;
+    const url = `https://api.spotify.com/v1/playlists/${playlistId}?fields=name,owner.id,description,images,snapshot_id,tracks.items(track(id,name,uri,artists(name),album(name)))`;
     if (playlists[index].data) {
       loadPlaylistTracks(index + 1);
     } else {
