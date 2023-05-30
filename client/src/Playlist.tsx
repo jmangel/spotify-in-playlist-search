@@ -1,5 +1,6 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { Button, Table } from 'reactstrap';
+import { IAudioFeatures } from "./App";
 
 export interface ITrack {
   name: string,
@@ -50,12 +51,14 @@ function Playlist(
     profileId,
     playPlaylistTrack,
     restorePlaylist,
+    averageFeatures,
   } : {
     playlist: IPlaylist | IRememberedPlaylist,
     searchTerm: string,
     profileId: string,
     playPlaylistTrack: (songUri: string, offsetPosition: number) => void,
     restorePlaylist?: () => void,
+    averageFeatures?: IAudioFeatures
   }
 ) {
   const [expanded, setExpanded] = useState(false);
@@ -166,6 +169,35 @@ function Playlist(
               })}
             </tbody>
           </Table>
+          {/* display datapairs for average features:
+            acousticness: number,
+            danceability: number,
+            energy: number,
+            instrumentalness: number,
+            liveness: number,
+            loudness: number,
+            speechiness: number,
+            tempo: number,
+            happiness: number,
+            majorness: number
+           */}
+          {averageFeatures && (
+            <div>
+              <h5>Average Features</h5>
+              <ul>
+                <li>Acousticness: {averageFeatures.acousticness}</li>
+                <li>Danceability: {averageFeatures.danceability}</li>
+                <li>Energy: {averageFeatures.energy}</li>
+                <li>Instrumentalness: {averageFeatures.instrumentalness}</li>
+                <li>Liveness: {averageFeatures.liveness}</li>
+                <li>Loudness: {averageFeatures.loudness}</li>
+                <li>Speechiness: {averageFeatures.speechiness}</li>
+                <li>Tempo: {averageFeatures.tempo}</li>
+                <li>Happiness: {averageFeatures.happiness}</li>
+                <li>Majorness: {averageFeatures.majorness}</li>
+              </ul>
+            </div>
+          )}
         </div>
       ) : (
         <span>

@@ -14,6 +14,19 @@ our Working with Playlists guide.
 https://developer.spotify.com/documentation/general/guides/working-with-playlists/
 */
 
+export type IAudioFeatures = {
+  acousticness: number,
+  danceability: number,
+  energy: number,
+  instrumentalness: number,
+  liveness: number,
+  loudness: number,
+  speechiness: number,
+  tempo: number,
+  happiness: number,
+  majorness: number,
+}
+
 function usePrevious<T>(value: T) {
   const ref = useRef<T>();
   useEffect(() => {
@@ -55,6 +68,8 @@ function App() {
   const [showRememberedPlaylists, setShowRememberedPlaylists] = useState(false);
 
   const [localStorageError, setLocalStorageError] = useState<string>();
+
+  const [tracksFeatures, setTracksFeatures] = useState<{ [trackId: string]: IAudioFeatures }>({});
 
   const loadDevices = useCallback(() => {
     ajax({
@@ -146,17 +161,143 @@ function App() {
     if (loading) return;
 
     // get a unique set of track ids across all playlists
-    const trackIds = new Set<string>();
+    const trackIdsSet = new Set<string>();
     playlists.forEach(({ data }) => {
       if (data) {
         data.tracks.forEach((track) => {
-          trackIds.add(track.id);
+          trackIdsSet.add(track.id);
         });
       }
     });
 
-    console.warn('done loading, here are the track ids', trackIds);
-  }, [loading, playlists])
+    console.warn('done loading, here are the track ids', trackIdsSet);
+
+    const iterator = trackIdsSet.values();
+    let current = iterator.next();
+
+    const batchPromises: Promise<any>[] = [];
+
+    while (!current.done) {
+      const batch: string[] = [];
+
+      for (let i = 0; i < 100 && !current.done; i++) {
+        batch.push(current.value);
+        current = iterator.next();
+      }
+
+      const idsString = batch.join(',');
+
+      const promise = new Promise<any>((resolve, reject) => {
+        ajax({
+          url: `https://api.spotify.com/v1/audio-features?ids=${idsString}`,
+          headers: {
+            'Authorization': 'Bearer ' + accessToken
+          },
+          success: function(response) {
+            resolve(response.audio_features);
+          },
+          error: function(response) {
+            reject(response);
+          }
+        });
+      });
+
+      batchPromises.push(promise);
+    }
+
+    Promise.all(batchPromises)
+      .then((responses) => {
+        const newTracksFeatures: Record<string, IAudioFeatures> = {};
+
+        responses.forEach((batchFeatures) => {
+          batchFeatures.forEach((trackFeatures: TrackFeaturesResponse) => {
+            newTracksFeatures[trackFeatures.id] = {
+              acousticness: trackFeatures.acousticness,
+              danceability: trackFeatures.danceability,
+              energy: trackFeatures.energy,
+              instrumentalness: trackFeatures.instrumentalness,
+              liveness: trackFeatures.liveness,
+              loudness: trackFeatures.loudness,
+              speechiness: trackFeatures.speechiness,
+              tempo: trackFeatures.tempo,
+              happiness: trackFeatures.valence,
+              majorness: trackFeatures.mode
+            };
+          });
+        });
+
+        setTracksFeatures((prevTracksFeatures) => {
+          return {
+            ...prevTracksFeatures,
+            ...newTracksFeatures
+          };
+        });
+      })
+      .catch((error) => {
+        console.warn('Error getting features', error);
+      });
+    interface TrackFeaturesResponse {
+      id: string;
+      acousticness: number;
+      danceability: number;
+      energy: number;
+      instrumentalness: number;
+      liveness: number;
+      loudness: number;
+      speechiness: number;
+      tempo: number;
+      valence: number;
+      mode: number;
+    }
+
+  }, [loading, playlists, accessToken]);
+
+  const playlistAverageFeatures = useCallback((playlist: IPlaylist) => {
+    const tracks = playlist?.data?.tracks;
+    if (!tracks) return undefined;
+
+    const features = tracks.map((track) => tracksFeatures[track.id]);
+
+    const averageFeatures = features.reduce((acc, feature) => {
+      if (!feature) return acc;
+      return {
+        acousticness: acc.acousticness + feature.acousticness,
+        danceability: acc.danceability + feature.danceability,
+        energy: acc.energy + feature.energy,
+        instrumentalness: acc.instrumentalness + feature.instrumentalness,
+        liveness: acc.liveness + feature.liveness,
+        loudness: acc.loudness + feature.loudness,
+        speechiness: acc.speechiness + feature.speechiness,
+        tempo: acc.tempo + feature.tempo,
+        happiness: acc.happiness + feature.happiness,
+        majorness: acc.majorness + feature.majorness,
+      };
+    }, {
+      acousticness: 0,
+      danceability: 0,
+      energy: 0,
+      instrumentalness: 0,
+      liveness: 0,
+      loudness: 0,
+      speechiness: 0,
+      tempo: 0,
+      happiness: 0,
+      majorness: 0,
+    });
+
+    return {
+      acousticness: averageFeatures.acousticness / features.length,
+      danceability: averageFeatures.danceability / features.length,
+      energy: averageFeatures.energy / features.length,
+      instrumentalness: averageFeatures.instrumentalness / features.length,
+      liveness: averageFeatures.liveness / features.length,
+      loudness: averageFeatures.loudness / features.length,
+      speechiness: averageFeatures.speechiness / features.length,
+      tempo: averageFeatures.tempo / features.length,
+      happiness: averageFeatures.happiness / features.length,
+      majorness: averageFeatures.majorness / features.length,
+    };
+  }, [tracksFeatures]);
 
   const localStorageKey = (playlistId: string) => `playlistSnapshots_${playlistId}`;
 
@@ -536,6 +677,7 @@ function App() {
                   searchTerm={(searchTerm || '').toLowerCase()}
                   playPlaylistTrack={(songUri: string, offsetPosition: number) => playPlaylistTrack(playlists[index].metadata.uri, songUri, offsetPosition)}
                   restorePlaylist={() => restorePlaylist(playlist)}
+                  averageFeatures={playlistAverageFeatures(playlist)}
                 />
               ))}
               {/* {matchingPlaylists.map(({ playlist, tracks }) => (
