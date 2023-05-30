@@ -36,6 +36,8 @@ function App() {
   const [accessToken, setAccessToken] = useState('');
   const previousAccessToken = usePrevious(accessToken);
 
+  const [refreshTokenTimeout, setRefreshTokenTimeout] = useState<NodeJS.Timeout | undefined>();
+
   const [profileInfo, setProfileInfo] = useState<{ display_name?: string, external_urls?: { spotify: string }, id?: string}>({});
 
   const [devices, setDevices] = useState<{ id: string, is_active: boolean, name: string }[]>([]);
@@ -80,8 +82,16 @@ function App() {
       xhrFields: { withCredentials: true },
     }).done(function(data) {
       setAccessToken(data.access_token);
+      if (data.expires_in) {
+        if (refreshTokenTimeout) clearTimeout(refreshTokenTimeout);
+        setRefreshTokenTimeout(setTimeout(refreshAccessToken, data.expires_in * 1000));
+      }
     });
   }
+
+  useEffect(() => {
+    console.warn('useEffect refreshTokenTimeout', refreshTokenTimeout);
+  }, [refreshTokenTimeout])
 
   useEffect(() => {
     if (previousAccessToken) return;
