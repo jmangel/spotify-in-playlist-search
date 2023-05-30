@@ -90,7 +90,7 @@ function Playlist(
       return undefined;
     }
 
-    return tracks.map(({ id }) => tracksFeatures[id]).filter(tf => !!tf);
+    return tracks.map((track) => !!track && tracksFeatures[track.id]).filter(tf => !!tf);
   }, [tracksFeatures, tracks]);
 
   const averageFeatures = useMemo(() => {
