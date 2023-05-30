@@ -256,7 +256,8 @@ function App() {
     const tracks = playlist?.data?.tracks;
     if (!tracks) return undefined;
 
-    const features = tracks.map((track) => tracksFeatures[track.id]);
+    const features = tracks.map((track) => tracksFeatures[track.id]).filter((feature) => !!feature);
+    if (features.length === 0) return undefined;
 
     const averageFeatures = features.reduce((acc, feature) => {
       if (!feature) return acc;
