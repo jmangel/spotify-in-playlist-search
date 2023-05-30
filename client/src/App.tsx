@@ -507,7 +507,7 @@ function App() {
                   key={playlist.metadata.snapshot_id}
                   playlist={playlist}
                   profileId={profileInfo.id!}
-                  searchTerm={searchTerm}
+                  searchTerm={(searchTerm || '').toLowerCase()}
                   playPlaylistTrack={(songUri: string, offsetPosition: number) => playPlaylistTrack(playlists[index].metadata.uri, songUri, offsetPosition)}
                   restorePlaylist={() => restorePlaylist(playlist)}
                 />

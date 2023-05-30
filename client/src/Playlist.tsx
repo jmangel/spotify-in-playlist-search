@@ -66,7 +66,7 @@ function Playlist(
       !!track &&
       `${track.name} ${track.artists.map(({ name }) => name).join(' ')} ${track.album.name}`
         .toLowerCase()
-        .includes((searchTerm || '').toLowerCase()),
+        .includes(searchTerm),
     [searchTerm]);
 
   // const trackMatches = useMemo(() => {
@@ -76,7 +76,7 @@ function Playlist(
   //       .map(({ name }) => name)
   //       .join(' ')} ${track.album.name}`
   //       .toLowerCase()
-  //       .includes((searchTerm || '').toLowerCase());
+  //       .includes(searchTerm);
   // }, [searchTerm]);
 
   const tracks = isRememberedPlaylist(playlist) ? playlist.tracks : playlist?.data?.tracks;
