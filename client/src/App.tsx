@@ -381,7 +381,11 @@ function App() {
 
 
   useEffect(() => {
-    if (!loadingPlaylists && playlists.length > 0 && !playlists.some(({ data }) => !!data)) getCachedPlaylistTracks(0);
+    if (!loadingPlaylists && playlists.length > 0 && !playlists.some(({ data }) => !!data)) {
+      // TODO: sort the playlists by most recently updated
+
+      getCachedPlaylistTracks(0);
+    }
   }, [loadingPlaylists, playlists, getCachedPlaylistTracks])
 
   function recursivelyGetPlaylists(url = 'https://api.spotify.com/v1/me/playlists') {
