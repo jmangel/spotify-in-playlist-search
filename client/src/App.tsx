@@ -273,7 +273,7 @@ function App() {
     }
 
     const playlistId = playlists[index].metadata.id
-    const url = `https://api.spotify.com/v1/playlists/${playlistId}?fields=name,owner.id,description,images,snapshot_id,tracks.items(track(id,name,uri,artists(name),album(name)))`;
+    const url = `https://api.spotify.com/v1/playlists/${playlistId}?fields=name,owner(id),description,images,snapshot_id,tracks.items(track(artists.name),track(id,name,uri,album(name)))`;
     if (playlists[index].data) {
       loadPlaylistTracks(index + 1);
     } else {
