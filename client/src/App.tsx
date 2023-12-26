@@ -145,6 +145,18 @@ function App() {
       }
     });
 
+    Object.entries(localStorage).forEach(([key, stringified]) => {
+      const playlist = JSON.parse(stringified);
+      delete playlist['undefined'];
+
+      if (Object.keys(playlist).length === 0) {
+        localStorage.removeItem(key);
+      } else {
+          const cleanedStringified = JSON.stringify(playlist);
+          localStorage.setItem(key, cleanedStringified);
+      }
+  })
+
     const rememberedSnapshots = Object.entries(localStorage).flatMap(([key, stringified]) => {
       const playlistId = key.replace(/playlistSnapshots_/, '');
       return (Object.values(JSON.parse(stringified)) as (IRememberedPlaylist & { tracks: { items: { track: ITrack }[] } })[]).map((value) => {
